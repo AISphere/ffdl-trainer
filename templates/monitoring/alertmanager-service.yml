@@ -1,0 +1,17 @@
+{{ if .Values.prometheus.deploy }}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: alertmanager
+  name: alertmanager
+  namespace: {{.Values.namespace}}
+spec:
+  selector:
+    app: alertmanager
+  type: ClusterIP
+  ports:
+  - name: alertmanager
+    protocol: TCP
+    port: {{.Values.prometheus.alertmanager_port}}
+{{ end }}

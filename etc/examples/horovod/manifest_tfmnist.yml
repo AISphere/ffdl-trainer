@@ -1,0 +1,25 @@
+name: Distributed-horovod-tensorflow
+description: Distributed-horovod-tensorflow examples based on https://github.com/uber/horovod/blob/master/examples/tensorflow_mnist.py
+version: "1.0"
+gpus: 0
+cpus: 1
+memory: 1Gb
+learners: 2
+
+data_stores:
+  - id: sl-internal-os
+    type: mount_cos
+    training_data:
+      container: tf_training_data
+    training_results:
+      container: tf_trained_model
+    connection:
+      auth_url: http://s3.default.svc.cluster.local
+      user_name: test
+      password: test
+
+framework:
+  name: horovod
+  version: "0.13.10-tf1.9.0-torch0.4.0-py3.5"
+  command: python tensorflow_mnist.py
+  # the command is basically running the above command via openmpi, feel free to remove  -x NCCL_DEBUG=INFO
