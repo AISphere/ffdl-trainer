@@ -1,0 +1,62 @@
+/*
+ * Copyright 2017-2018 IBM Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+syntax = "proto3";
+
+package grpc.ratelimiter.v1;
+
+// Service to provide ratelimiting
+service Ratelimiter {
+	// ===== GET ENDPOINTS, called from trainer =====
+	// JobAllowed returns true if there are enough resources to schedule the job
+	rpc JobAllowed (RatelimitRequest) returns (RatelimitResponse) {}
+
+	// ===== UPDATE ENDPOINTS, to force refresh counts =====
+	// UpdateUsage updates the usage and resets allowed GPUs counters
+	rpc UpdateUsage (UpdateOptions) returns (UpdateResponse) {}
+
+	// UpdateTotal refreshes the total number of GPUs in the cluster
+	rpc UpdateTotal (UpdateOptions) returns (UpdateResponse) {}
+}
+
+message RatelimitRequest {
+	// total number of GPUs across all learners for this job
+	int64 gpus = 1;
+
+    //Optional. If not specified, assume nvidia-TeslaK80
+    //Can only be nvidia-TeslaK80, nvidia-TeslaP100 or nvidia-TeslaV100
+	string gpu_type = 2;
+
+	string training_id = 3;
+	string user_id = 4;
+
+	// total number of CPUs requested
+	float cpus = 5;
+}
+
+message RatelimitResponse {
+	// true if there are enough resources for the job to run
+	bool allowed = 1;
+
+	string zone = 2;
+}
+
+message UpdateOptions {
+}
+
+message UpdateResponse {
+	bool success = 1;
+}

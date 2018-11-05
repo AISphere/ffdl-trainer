@@ -23,7 +23,7 @@ import (
 	"strings"
 	"time"
 	"github.com/AISphere/ffdl-commons/logger"
-	"github.com/AISphere/ffdl-commons/service"
+	"github.com/AISphere/ffdl-lcm/service"
 	"github.com/AISphere/ffdl-trainer/trainer/grpc_trainer_v2"
 )
 
