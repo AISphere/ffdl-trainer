@@ -16,7 +16,6 @@
 
 
 FROM ubuntu:16.04
-MAINTAINER Florian Rosenberg <rosenberg@at.ibm.com>
 
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update && apt-get install --yes ca-certificates curl ldnsutils
