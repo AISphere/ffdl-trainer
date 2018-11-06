@@ -39,7 +39,7 @@ import:
   version: ^1.0.42
 - package: github.com/nu7hatch/gouuid
 - package: github.com/sirupsen/logrus
-  version: ^1.2.0
+  version: v1.1.1
 - package: github.com/spf13/cobra
   version: ^0.0.3
   subpackages:
@@ -48,10 +48,6 @@ import:
   version: 583c0c0531f06d5278b7d917446061adc344b5cd
 - package: github.com/spf13/viper
   version: ^1.2.1
-- package: github.com/stretchr/testify
-  version: ^1.2.2
-  subpackages:
-  - assert
 - package: github.com/ventu-io/go-shortid
   version: ^1.0.0
 - package: golang.org/x/net
@@ -79,3 +75,8 @@ import:
   version: 9b800f95dbbc54abff0acf7ee32d88ba4e328c89
   subpackages:
   - unix
+testImport:
+- package: github.com/stretchr/testify
+  version: ^1.2.2
+  subpackages:
+  - assert
