@@ -24,7 +24,10 @@ import:
 - package: github.com/go-kit/kit
   version: ^0.7.0
   subpackages:
+  - log
   - metrics
+  - metrics/prometheus
+  - metrics/statsd
   - metrics/discard
 - package: github.com/golang/protobuf
   version: ^1.2.0
