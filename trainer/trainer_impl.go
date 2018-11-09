@@ -181,7 +181,7 @@ func (metrics *clientServerErrorMetricsBunchStruct) incrementClientServerErrorMe
 // Service represents the functionality of the trainer service
 type Service interface {
 	grpc_trainer_v2.TrainerServer
-	service.LifecycleHandler
+		service.LifecycleHandler
 	StopTrainer()
 }
 
