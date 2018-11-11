@@ -1,0 +1,4 @@
+dependencies:
+- name: ffdl-lcm
+  repository: file://../ffdl-lcm
+  version: 0.1.1
