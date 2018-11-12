@@ -23,6 +23,9 @@ spec:
       - name: learner-config-volume
         configMap:
           name: learner-config
+      - name: ssl-certificates
+        secret:
+          secretName: service-ssl-certificates
 {{ if ne .Values.env "dev" }}
       - name: "mongo-ssl-cert"
         secret:
@@ -34,7 +37,7 @@ spec:
 {{ end }}
       containers:
       - name: ffdl-trainer-container
-        image: {{.Values.docker.registry}}/{{.Values.docker.namespace}}/{{.Values.docker.image_prefix}}trainer:{{.Values.trainer.version}}
+        image: {{.Values.docker.registry}}/{{.Values.docker.namespace}}/{{.Values.trainer.image_name}}:{{.Values.trainer.version}}
 {{ if .Values.docker.pullPolicy }}
         imagePullPolicy: {{.Values.docker.pullPolicy}}
 {{ end }}
@@ -91,9 +94,14 @@ spec:
             secretKeyRef:
               name: trainer-secrets
               key: DLAAS_OBJECTSTORE_PASSWORD
+        - name: DLAAS_GPU_LIMITS
+          value: {{.Values.trainer.gpu_limits}}
         volumeMounts:
         - mountPath: /etc/learner-config
           name: learner-config-volume
+        - mountPath: /etc/ssl/dlaas
+          name: ssl-certificates
+          readOnly: true
 {{ if ne .Values.env "dev" }}
         - name: mongo-ssl-cert
           mountPath: /etc/certs/
@@ -114,4 +122,4 @@ spec:
           initialDelaySeconds: 15
           timeoutSeconds: 2
       imagePullSecrets:
-      - name: regcred
+      - name: {{.Values.docker.imagePullSecret}}

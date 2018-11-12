@@ -1,9 +1,19 @@
-package: github.ibm.com/deep-learning-platform/dlaas-trainer-service
+package: github.com/AISphere/ffdl-trainer
+ignore:
+- github.com/AISphere/ffdl-lcm
+- github.com/AISphere/ffdl-model-metrics
 import:
-- package: github.com/sirupsen/logrus
-  version: ~1.0.2
+- package: github.com/AISphere/ffdl-commons
+  version: proto-only-depend
+  repo: https://github.com/sboagibm/ffdl-commons.git
+  subpackages:
+  - config
+  - framework
+  - logger
+  - metricsmon
+  - util
 - package: github.com/aws/aws-sdk-go
-  version: ~1.10.9
+  version: ^1.15.68
   subpackages:
   - aws
   - aws/awserr
@@ -11,48 +21,61 @@ import:
   - aws/session
   - service/s3
   - service/s3/s3manager
+- package: github.com/go-kit/kit
+  version: ^0.7.0
+  subpackages:
+  - log
+  - metrics
+  - metrics/prometheus
+  - metrics/statsd
+  - metrics/discard
 - package: github.com/golang/protobuf
+  version: ^1.2.0
   subpackages:
   - proto
+- package: github.com/grpc-ecosystem/go-grpc-prometheus
+  version: v1.2.0
 - package: github.com/ncw/swift
+  version: ^1.0.42
 - package: github.com/nu7hatch/gouuid
+- package: github.com/sirupsen/logrus
+  version: v1.1.1
+- package: github.com/spf13/cobra
+  version: ^0.0.3
+  subpackages:
+  - cobra/cobra
+- package: github.com/spf13/pflag
+  version: 583c0c0531f06d5278b7d917446061adc344b5cd
 - package: github.com/spf13/viper
+  version: ^1.2.1
 - package: github.com/ventu-io/go-shortid
-  version: ~1.0
-- package: github.ibm.com/deep-learning-platform/dlaas-commons
-  repo: git@github.ibm.com:deep-learning-platform/dlaas-commons.git
-- package: github.ibm.com/deep-learning-platform/dlaas-training-metrics-service
-  repo: git@github.ibm.com:deep-learning-platform/dlaas-training-metrics-service.git
-  subpackages:
-  - service/grpc_training_data_v1
-- package: github.ibm.com/deep-learning-platform/dlaas-ratelimiter
-  repo: git@github.ibm.com:deep-learning-platform/dlaas-ratelimiter.git
-  subpackages:
-  - service/grpc_ratelimiter_v1
+  version: ^1.0.0
 - package: golang.org/x/net
   subpackages:
   - context
 - package: google.golang.org/grpc
-  version: v1.14.0
+  version: ^1.16.0
   subpackages:
   - codes
+  - credentials
+  - health/grpc_health_v1
+  - status
 - package: gopkg.in/mgo.v2
   subpackages:
   - bson
-- package: github.com/go-kit/kit
-  version: v0.7.0
-  subpackages:
-  - metrics
+- package: gopkg.in/yaml.v2
+  version: ^2.2.1
 - package: github.com/prometheus/client_golang
-  version: v0.8.0
+  version: ^v0.8.0
   subpackages:
   - prometheus
-- package: github.com/grpc-ecosystem/go-grpc-prometheus
-  version: v1.2.0
+- package: github.com/spf13/cast
+  version: ^1.3.0
+- package: golang.org/x/sys
+  version: 9b800f95dbbc54abff0acf7ee32d88ba4e328c89
+  subpackages:
+  - unix
 testImport:
 - package: github.com/stretchr/testify
   subpackages:
   - assert
-- package: github.com/golang/mock
-  subpackages:
-  - gomock

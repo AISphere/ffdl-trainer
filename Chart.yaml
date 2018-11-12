@@ -1,4 +1,5 @@
-name: ffdl
+name: ffdl-trainer
 description: Fabric for Deep Learning (FfDL)
 version: 0.1.1
 appVersion: 3.3
+icon: https://raw.githubusercontent.com/AISphere/ffdl-dashboard/master/web-gui/src/assets/img/ffdl.png

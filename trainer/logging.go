@@ -18,8 +18,8 @@
 package trainer
 
 import (
-	log "github.com/sirupsen/logrus"
 	"github.com/AISphere/ffdl-commons/logger"
+	log "github.com/sirupsen/logrus"
 )
 
 func logEntry() *log.Entry {
