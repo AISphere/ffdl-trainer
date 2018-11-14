@@ -42,6 +42,9 @@ ffdl-lcm:
     device_plugin: true
     # This will used for "volume.beta.kubernetes.io/storage-class" for the shared volume
     shared_volume_storage_class: ""
+    trainer_service_name: "ffdl-trainer"
+    data_service_name: "ffdl-trainingdata"
+    image_tag: "dev"
   learner:
     tag: master-97
     docker_namespace: ffdl

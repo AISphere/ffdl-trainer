@@ -20,9 +20,9 @@ spec:
         version: {{.Values.trainer.version}}
     spec:
       volumes:
-      - name: learner-config-volume
+      - name: learner-config-json
         configMap:
-          name: learner-config
+          name: learner-config-new
       - name: ssl-certificates
         secret:
           secretName: service-ssl-certificates
@@ -97,8 +97,8 @@ spec:
         - name: DLAAS_GPU_LIMITS
           value: {{.Values.trainer.gpu_limits}}
         volumeMounts:
-        - mountPath: /etc/learner-config
-          name: learner-config-volume
+        - mountPath: /etc/learner-config-json/
+          name: learner-config-json
         - mountPath: /etc/ssl/dlaas
           name: ssl-certificates
           readOnly: true

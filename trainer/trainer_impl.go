@@ -819,7 +819,8 @@ func (s *trainerService) CreateTrainingJob(ctx context.Context, req *grpc_traine
 	zone := ""
 	if qSize == 0 {
 		// ignore possible errors reaching dlaas-ratelimiter
-		rateLimited, zone, _ = s.rateLimitTrainingJob(tr, logr)
+		//rateLimited, zone, _ = s.rateLimitTrainingJob(tr, logr)
+		rateLimited = false
 	}
 
 	if rateLimited {
