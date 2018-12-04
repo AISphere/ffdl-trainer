@@ -34,10 +34,10 @@ script:
   - export DOCKER_REPO_USER=$dockeruser
   - export DOCKER_REPO_PASS=$dockerpassword
   # Install protoc
-#   - PROTOC_ZIP=protoc-3.3.0-linux-x86_64.zip
-#   - curl -OL https://github.com/google/protobuf/releases/download/v3.3.0/$PROTOC_ZIP
-#   - sudo unzip -o $PROTOC_ZIP -d /usr/local bin/protoc
-#   - rm -f $PROTOC_ZIP
+  - PROTOC_ZIP=protoc-3.3.0-linux-x86_64.zip
+  - curl -OL https://github.com/google/protobuf/releases/download/v3.3.0/$PROTOC_ZIP
+  - sudo unzip -o $PROTOC_ZIP -d /usr/local bin/protoc
+  - rm -f $PROTOC_ZIP
   # Install protoc-go-gen
   - go get -u github.com/golang/protobuf/{proto,protoc-gen-go}
   # Install kubectl
