@@ -38,6 +38,8 @@ script:
   - curl -OL https://github.com/google/protobuf/releases/download/v3.3.0/$PROTOC_ZIP
   - sudo unzip -o $PROTOC_ZIP -d /usr/local bin/protoc
   - rm -f $PROTOC_ZIP
+  # Install protoc-go-gen
+  - go get -u github.com/golang/protobuf/protoc-gen-go
   # Open SSH
   #  - echo travis:$sshpassword | sudo chpasswd
   #  - sudo sed -i 's/ChallengeResponseAuthentication no/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
