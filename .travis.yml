@@ -16,7 +16,7 @@ before_script:
   - (sudo add-apt-repository -y ppa:gophers/archive; sudo apt-get -y update; sudo apt-get -y install golang-1.9-go) > /dev/null 2>&1
   - export PATH=/usr/lib/go-1.9/bin:$PATH; export GOROOT=/usr/lib/go-1.9/
   # place repository in GOPATH (a.k.a. do the GOPATH dance)
-  - echo "GOPATH is $GOPATH"; mkdir -p $GOPATH/src/github.com/IBM/; mv `pwd` $GOPATH/src/github.com/IBM/; cd $GOPATH/src/github.com/IBM/*
+  - echo "GOPATH is $GOPATH"; mkdir -p $GOPATH/src/github.com/AISphere/; mv `pwd` $GOPATH/src/github.com/AISphere/; cd $GOPATH/src/github.com/AISphere/*
   # install Glide
   - curl https://glide.sh/get | bash > /dev/null
   
