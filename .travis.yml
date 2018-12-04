@@ -34,8 +34,8 @@ script:
   - export DOCKER_REPO_USER=$dockeruser
   - export DOCKER_REPO_PASS=$dockerpassword
   # Install protoc
-  - PROTOC_ZIP=protoc-3.5.0-linux-x86_64.zip
-  - curl -OL https://github.com/google/protobuf/releases/download/v3.5.0/$PROTOC_ZIP
+  - PROTOC_ZIP=protoc-3.4.0-linux-x86_64.zip
+  - curl -OL https://github.com/google/protobuf/releases/download/v3.4.0/$PROTOC_ZIP
   - sudo unzip -o $PROTOC_ZIP -d /usr/local bin/protoc
   - rm -f $PROTOC_ZIP
   # Install protoc-go-gen
