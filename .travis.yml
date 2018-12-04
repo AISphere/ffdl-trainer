@@ -29,6 +29,10 @@ script:
   - git clone https://github.com/AISphere/ffdl-commons ../ffdl-commons
   - git clone https://github.com/AISphere/ffdl-job-monitor ../ffdl-job-monitor
   - git clone https://github.com/AISphere/ffdl-model-metrics ../ffdl-model-metrics
+  - export DOCKER_BX_NS_HOST=docker.io
+  - export DOCKER_NAMESPACE=$dockeruser
+  - export DOCKER_REPO_USER=$dockeruser
+  - export DOCKER_REPO_PASS=$dockerpassword
   # Open SSH
   #  - echo travis:$sshpassword | sudo chpasswd
   #  - sudo sed -i 's/ChallengeResponseAuthentication no/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
@@ -36,7 +40,7 @@ script:
   #  - sudo apt-get install sshpass
   #  - sshpass -p $sshpassword ssh -R 9999:localhost:22 -o StrictHostKeyChecking=no travis@$bouncehostip
   # compile and build Docker images
-  - make all-build
+  - make build
 
 notifications:
   email: false
