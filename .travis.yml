@@ -52,7 +52,9 @@ script:
   #  - sshpass -p $sshpassword ssh -R 9999:localhost:22 -o StrictHostKeyChecking=no travis@$bouncehostip
   # compile and build Docker images
   - make install-deps-if-needed
+  - go install ./vendor/github.com/golang/protobuf/protoc-gen-go
   - ls vendor/github.com/golang/protobuf/
+  - make build
 
 notifications:
   email: false
