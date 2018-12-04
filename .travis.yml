@@ -54,6 +54,7 @@ script:
   - make install-deps-if-needed
   - go install ./vendor/github.com/golang/protobuf/protoc-gen-go
   - ls vendor/github.com/golang/protobuf/
+  - protoc --version
   - make build
 
 notifications:
