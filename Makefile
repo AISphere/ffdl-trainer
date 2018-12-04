@@ -31,7 +31,7 @@ protoc-ratelimiter:  clean-ratelimiter ## Make the rate limiter plugin client, d
 	@# At the time of writing, protoc does not support custom tags, hence use a little regex to add "bson:..." tags
 	@# See: https://github.com/golang/protobuf/issues/52
 	cd $(RATELIMITER_LOCATION); \
-	sed -i .bak '/.*bson:.*/! s/json:"\([^"]*\)"/json:"\1" bson:"\1"/' ./$(RATELIMITER_SUBDIR)/$(RATELIMITER_FNAME).pb.go
+	sed -i.bak '/.*bson:.*/! s/json:"\([^"]*\)"/json:"\1" bson:"\1"/' ./$(RATELIMITER_SUBDIR)/$(RATELIMITER_FNAME).pb.go
 
 protoc: protoc-lcm protoc-tds          ## Make gRPC proto clients, depends on `make glide` being run first
 
