@@ -43,9 +43,9 @@ diagnose-target-build:
 diagnose-target-push:
 	@echo "Calling docker-push-base"
 
-docker-build: docker-build-base        ## Install dependencies if vendor folder is missing, build go code, build docker image
+docker-build: diagnose-target-build docker-build-base        ## Install dependencies if vendor folder is missing, build go code, build docker image
 
-docker-push: docker-push-base          ## Push docker image to a docker hub
+docker-push: diagnose-target-push docker-push-base          ## Push docker image to a docker hub
 
 clean: clean-base clean-ratelimiter    ## clean all build artifacts
 	rm -rf build; \
