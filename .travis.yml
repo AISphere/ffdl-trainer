@@ -3,6 +3,7 @@ sudo: required
 branches:
   only:
     - master
+    - travis-ci
 
 services:
   - docker
@@ -15,22 +16,37 @@ before_script:
   - (sudo add-apt-repository -y ppa:gophers/archive; sudo apt-get -y update; sudo apt-get -y install golang-1.9-go) > /dev/null 2>&1
   - export PATH=/usr/lib/go-1.9/bin:$PATH; export GOROOT=/usr/lib/go-1.9/
   # place repository in GOPATH (a.k.a. do the GOPATH dance)
-  - echo "GOPATH is $GOPATH"; mkdir -p $GOPATH/src/github.com/IBM/; mv `pwd` $GOPATH/src/github.com/IBM/; cd $GOPATH/src/github.com/IBM/*
+  - echo "GOPATH is $GOPATH"; mkdir -p $GOPATH/src/github.com/AISphere/; mv `pwd` $GOPATH/src/github.com/AISphere/; cd $GOPATH/src/github.com/AISphere/*
   # install Glide
   - curl https://glide.sh/get | bash > /dev/null
-  # install "nsenter" (needed for k8s container port forwarding)
-  - docker run --rm jpetazzo/nsenter cat /nsenter > /tmp/nsenter 2> /dev/null; sudo cp /tmp/nsenter /usr/local/bin/; sudo chmod +x /usr/local/bin/nsenter; which nsenter
-  # install Minikube (in the background, to speed up the build)
-  - make install-minikube-in-ci > /dev/null &
-  # install Helm
-  - curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash > /dev/null &
-  # install aws CLI
-  - (sudo pip install -q awscli; which aws > /dev/null) &
+  
 
 script:
   # fail fast
   - set -e
   - export MAKE_ARGS=--no-print-directory
+  - git clone https://github.com/AISphere/ffdl-lcm ../ffdl-lcm
+  - git clone https://github.com/AISphere/ffdl-commons -b travis-ci ../ffdl-commons
+  - git clone https://github.com/AISphere/ffdl-job-monitor ../ffdl-job-monitor
+  - git clone https://github.com/AISphere/ffdl-model-metrics ../ffdl-model-metrics
+  - export DOCKER_BX_NS_HOST=docker.io
+  - export DOCKER_NAMESPACE=$dockeruser
+  - export DOCKER_REPO_USER=$dockeruser
+  - export DOCKER_REPO_PASS=$dockerpassword
+  # Install protoc
+  - PROTOC_ZIP=protoc-3.3.0-linux-x86_64.zip
+  - curl -OL https://github.com/google/protobuf/releases/download/v3.3.0/$PROTOC_ZIP
+  - sudo unzip -o $PROTOC_ZIP -d /usr/local bin/protoc
+  - rm -f $PROTOC_ZIP
+  # Install protoc-go-gen
+  - go get -u github.com/golang/protobuf/protoc-gen-go
+  - pushd .
+  - cd $GOPATH/src/github.com/golang/protobuf/protoc-gen-go && git checkout v1.2.0 && go install
+  - popd
+  # Install kubectl
+  - curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+  - chmod +x ./kubectl
+  - sudo mv ./kubectl /usr/local/bin/kubectl
   # Open SSH
   #  - echo travis:$sshpassword | sudo chpasswd
   #  - sudo sed -i 's/ChallengeResponseAuthentication no/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
@@ -38,16 +54,12 @@ script:
   #  - sudo apt-get install sshpass
   #  - sshpass -p $sshpassword ssh -R 9999:localhost:22 -o StrictHostKeyChecking=no travis@$bouncehostip
   # compile and build Docker images
-  - glide -q install
-  - make $MAKE_ARGS docker-build-base
-  - make $MAKE_ARGS gen-certs
-  - make $MAKE_ARGS build
-  - make $MAKE_ARGS docker-build
-  - make $MAKE_ARGS create-volumes
-  # deploy services
-  - make $MAKE_ARGS deploy
-  # submit a test job
-  - make $MAKE_ARGS test-submit-minikube-ci
+  - make install-deps-if-needed
+  #  - go install ./vendor/github.com/golang/protobuf/protoc-gen-go
+  #  - ls vendor/github.com/golang/protobuf/
+  #  - protoc --version
+  #  - grep -r --include=\*.go ProtoPackageIsVersion3 ../
+  - make docker-build
 
 notifications:
   email: false

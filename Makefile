@@ -31,15 +31,21 @@ protoc-ratelimiter:  clean-ratelimiter ## Make the rate limiter plugin client, d
 	@# At the time of writing, protoc does not support custom tags, hence use a little regex to add "bson:..." tags
 	@# See: https://github.com/golang/protobuf/issues/52
 	cd $(RATELIMITER_LOCATION); \
-	sed -i .bak '/.*bson:.*/! s/json:"\([^"]*\)"/json:"\1" bson:"\1"/' ./$(RATELIMITER_SUBDIR)/$(RATELIMITER_FNAME).pb.go
+	sed -i.bak '/.*bson:.*/! s/json:"\([^"]*\)"/json:"\1" bson:"\1"/' ./$(RATELIMITER_SUBDIR)/$(RATELIMITER_FNAME).pb.go
 
 protoc: protoc-lcm protoc-tds          ## Make gRPC proto clients, depends on `make glide` being run first
 
 install-deps: protoc-ratelimiter install-deps-base protoc  ## Remove vendor directory, rebuild dependencies
 
-docker-build: docker-build-base        ## Install dependencies if vendor folder is missing, build go code, build docker image
+diagnose-target-build:
+	@echo "Calling docker-build-base"
 
-docker-push: docker-push-base          ## Push docker image to a docker hub
+diagnose-target-push:
+	@echo "Calling docker-push-base"
+
+docker-build: diagnose-target-build docker-build-base        ## Install dependencies if vendor folder is missing, build go code, build docker image
+
+docker-push: diagnose-target-push docker-push-base          ## Push docker image to a docker hub
 
 clean: clean-base clean-ratelimiter    ## clean all build artifacts
 	rm -rf build; \
