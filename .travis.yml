@@ -40,6 +40,9 @@ script:
   - rm -f $PROTOC_ZIP
   # Install protoc-go-gen
   - go get -u github.com/golang/protobuf/protoc-gen-go
+  - pushd .
+  - cd $GOPATH/src/github.com/golang/protobuf/protoc-gen-go && git checkout v1.2.0 && go install
+  - popd
   # Install kubectl
   - curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
   - chmod +x ./kubectl
@@ -52,10 +55,10 @@ script:
   #  - sshpass -p $sshpassword ssh -R 9999:localhost:22 -o StrictHostKeyChecking=no travis@$bouncehostip
   # compile and build Docker images
   - make install-deps-if-needed
-  - go install ./vendor/github.com/golang/protobuf/protoc-gen-go
-  - ls vendor/github.com/golang/protobuf/
-  - protoc --version
-  - grep -r --include=\*.go ProtoPackageIsVersion3 ../
+  #  - go install ./vendor/github.com/golang/protobuf/protoc-gen-go
+  #  - ls vendor/github.com/golang/protobuf/
+  #  - protoc --version
+  #  - grep -r --include=\*.go ProtoPackageIsVersion3 ../
   - make build
 
 notifications:
