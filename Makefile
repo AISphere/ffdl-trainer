@@ -37,6 +37,12 @@ protoc: protoc-lcm protoc-tds          ## Make gRPC proto clients, depends on `m
 
 install-deps: protoc-ratelimiter install-deps-base protoc  ## Remove vendor directory, rebuild dependencies
 
+diagnose-target-build:
+	@echo "Calling docker-build-base"
+
+diagnose-target-push:
+	@echo "Calling docker-push-base"
+
 docker-build: docker-build-base        ## Install dependencies if vendor folder is missing, build go code, build docker image
 
 docker-push: docker-push-base          ## Push docker image to a docker hub
