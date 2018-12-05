@@ -59,7 +59,7 @@ script:
   #  - ls vendor/github.com/golang/protobuf/
   #  - protoc --version
   #  - grep -r --include=\*.go ProtoPackageIsVersion3 ../
-  - make build
+  - make docker-build
 
 notifications:
   email: false
