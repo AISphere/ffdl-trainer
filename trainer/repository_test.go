@@ -74,75 +74,78 @@ func TestMongoRepository(t *testing.T) {
 	collectionName := fmt.Sprintf("itest_trainer_repo_%d", time.Now().Unix())
 	r, err := newTrainingsRepository(mongoAddress, mongoDatabase, mongoUsername, mongoPassword,
 		mongoCertLocation, collectionName)
-	assert.NoError(t, err)
-	defer r.Close()
+	if err != nil {
+		t.Skip("Mongo not found, skipping test for now")
+	} else {
+		assert.NoError(t, err)
+		defer r.Close()
 
-	// create 10 Training instances and Store()
-	trainings := createTrainings()
-	for i := 0; i < len(trainings); i++ {
-		assert.NoError(t, r.Store(trainings[i]))
-	}
+		// create 10 Training instances and Store()
+		trainings := createTrainings()
+		for i := 0; i < len(trainings); i++ {
+			assert.NoError(t, r.Store(trainings[i]))
+		}
 
-	// Find()
-	found, err := r.Find("non_existing_id") // expect both to be nil. a non-existing item is not an error
-	assert.Nil(t, found)
-	if assert.Error(t, err) {
-		assert.Equal(t, err, mgo.ErrNotFound)
-	}
-
-	found, err = r.Find(trainings[0].TrainingID)
-	assert.NotNil(t, found)
-	assert.NoError(t, err)
-	assert.EqualValues(t, trainings[0].TrainingID, found.TrainingID)
-	assert.EqualValues(t, trainings[0].UserID, found.UserID)
-	assert.EqualValues(t, trainings[0].ModelDefinition.Name, found.ModelDefinition.Name)
-
-	records, err := r.FindAll("test-user1")
-	assert.NotNil(t, records)
-	assert.NoError(t, err)
-	assert.EqualValues(t, 5, len(records))
-
-	records, err = r.FindAll("test-user2")
-	assert.NotNil(t, records)
-	assert.NoError(t, err)
-	assert.EqualValues(t, 5, len(records))
-
-	// Testing updating a training record
-	tr, err := r.Find(trainings[0].TrainingID)
-	assert.NotNil(t, found)
-	assert.NoError(t, err)
-
-	tr.ModelDefinition.Name = "bar-name"
-	err = r.Store(tr)
-	assert.NoError(t, err)
-
-	tr2, err := r.Find(trainings[0].TrainingID)
-	assert.NotNil(t, tr2)
-	assert.NoError(t, err)
-	assert.EqualValues(t, "bar-name", tr2.ModelDefinition.Name)
-
-	// manually connect to Mongo to check state of soft-deleted records
-	sess, _ := ConnectMongo(mongoAddress, mongoDatabase, mongoUsername, mongoPassword, mongoCertLocation)
-	coll := sess.DB(mongoDatabase).C(collectionName)
-	defer sess.Close()
-
-	// Delete()
-	for i := 0; i < len(trainings); i++ {
-		trainingID := trainings[i].TrainingID
-		assert.NoError(t, r.Delete(trainingID))
-
-		// validate deletion
-		found, err = r.Find(trainingID)
+		// Find()
+		found, err := r.Find("non_existing_id") // expect both to be nil. a non-existing item is not an error
 		assert.Nil(t, found)
 		if assert.Error(t, err) {
 			assert.Equal(t, err, mgo.ErrNotFound)
 		}
 
-		// validate that the records still exist in Mongo (soft-delete)
-		count, _ := coll.Find(bson.M{"training_id": trainingID}).Count()
-		assert.True(t, count == 1)
-	}
+		found, err = r.Find(trainings[0].TrainingID)
+		assert.NotNil(t, found)
+		assert.NoError(t, err)
+		assert.EqualValues(t, trainings[0].TrainingID, found.TrainingID)
+		assert.EqualValues(t, trainings[0].UserID, found.UserID)
+		assert.EqualValues(t, trainings[0].ModelDefinition.Name, found.ModelDefinition.Name)
 
+		records, err := r.FindAll("test-user1")
+		assert.NotNil(t, records)
+		assert.NoError(t, err)
+		assert.EqualValues(t, 5, len(records))
+
+		records, err = r.FindAll("test-user2")
+		assert.NotNil(t, records)
+		assert.NoError(t, err)
+		assert.EqualValues(t, 5, len(records))
+
+		// Testing updating a training record
+		tr, err := r.Find(trainings[0].TrainingID)
+		assert.NotNil(t, found)
+		assert.NoError(t, err)
+
+		tr.ModelDefinition.Name = "bar-name"
+		err = r.Store(tr)
+		assert.NoError(t, err)
+
+		tr2, err := r.Find(trainings[0].TrainingID)
+		assert.NotNil(t, tr2)
+		assert.NoError(t, err)
+		assert.EqualValues(t, "bar-name", tr2.ModelDefinition.Name)
+
+		// manually connect to Mongo to check state of soft-deleted records
+		sess, _ := ConnectMongo(mongoAddress, mongoDatabase, mongoUsername, mongoPassword, mongoCertLocation)
+		coll := sess.DB(mongoDatabase).C(collectionName)
+		defer sess.Close()
+
+		// Delete()
+		for i := 0; i < len(trainings); i++ {
+			trainingID := trainings[i].TrainingID
+			assert.NoError(t, r.Delete(trainingID))
+
+			// validate deletion
+			found, err = r.Find(trainingID)
+			assert.Nil(t, found)
+			if assert.Error(t, err) {
+				assert.Equal(t, err, mgo.ErrNotFound)
+			}
+
+			// validate that the records still exist in Mongo (soft-delete)
+			count, _ := coll.Find(bson.M{"training_id": trainingID}).Count()
+			assert.True(t, count == 1)
+		}
+	}
 }
 
 //assert that FindCurrentlyRunningTrainings gets trainings sorted by the order of creation in descending manner
@@ -175,34 +178,38 @@ func TestMongoRespositoryFindCurrentlyRunningTrainings(t *testing.T) {
 
 	r, err := newTrainingsRepository(mongoAddress, mongoDatabase, mongoUsername, mongoPassword,
 		mongoCertLocation, fmt.Sprintf("itest_trainer_repo_%d", time.Now().Unix()))
-	assert.NoError(t, err)
-	defer r.Close()
+	if err != nil {
+		t.Skip("Mongo not found, skipping test for now")
+	} else {
+		assert.NoError(t, err)
+		defer r.Close()
 
-	// create 10 Training instances and Store()
-	trainings := createTrainingsWithGPUs(10)
-	for i := 0; i < len(trainings); i++ {
-		assert.NoError(t, r.Store(trainings[i]))
-	}
+		// create 10 Training instances and Store()
+		trainings := createTrainingsWithGPUs(10)
+		for i := 0; i < len(trainings); i++ {
+			assert.NoError(t, r.Store(trainings[i]))
+		}
 
-	currentTrainings, err := r.FindCurrentlyRunningTrainings(len(trainings))
-	assert.NoError(t, err)
+		currentTrainings, err := r.FindCurrentlyRunningTrainings(len(trainings))
+		assert.NoError(t, err)
 
-	//assert that the trainings are sorted in the descending order of time of creation
-	lastTrainingID := time.Now().UnixNano()
+		//assert that the trainings are sorted in the descending order of time of creation
+		lastTrainingID := time.Now().UnixNano()
 
-	for _, record := range currentTrainings {
-		assert.True(t, cast.ToInt64(record.TrainingID) < lastTrainingID, "Last training id was %v and comparing it with current id %v", record.TrainingID, lastTrainingID)
-		lastTrainingID = cast.ToInt64(record.TrainingID)
-		//assert that you can get the gpu and cpu counts and those fields are present in the result
-		assert.True(t, record.Training.Resources.Gpus > 0)
-		assert.True(t, record.Training.Resources.Cpus > 0)
-		//assert that training status field is present on all the records
-		assert.NotNil(t, record.TrainingStatus.Status)
-	}
+		for _, record := range currentTrainings {
+			assert.True(t, cast.ToInt64(record.TrainingID) < lastTrainingID, "Last training id was %v and comparing it with current id %v", record.TrainingID, lastTrainingID)
+			lastTrainingID = cast.ToInt64(record.TrainingID)
+			//assert that you can get the gpu and cpu counts and those fields are present in the result
+			assert.True(t, record.Training.Resources.Gpus > 0)
+			assert.True(t, record.Training.Resources.Cpus > 0)
+			//assert that training status field is present on all the records
+			assert.NotNil(t, record.TrainingStatus.Status)
+		}
 
-	// Delete()
-	for i := 0; i < len(trainings); i++ {
-		assert.NoError(t, r.Delete(trainings[i].TrainingID))
+		// Delete()
+		for i := 0; i < len(trainings); i++ {
+			assert.NoError(t, r.Delete(trainings[i].TrainingID))
+		}
 	}
 
 }
