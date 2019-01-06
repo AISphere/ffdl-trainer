@@ -21,6 +21,11 @@ RATELIMITER_SUBDIR ?= service/grpc_ratelimiter_v1
 RATELIMITER_PROTO_LOC ?= plugins/ratelimiter
 RATELIMITER_FNAME ?= ratelimiter
 
+TOOLCHAIN_DOCKER_HOST ?= docker.io
+TOOLCHAIN_DOCKER_NAMESPACE ?= ffdl
+TOOLCHAIN_DOCKER_IMG_NAME ?= ffdlbuildtools
+TOOLCHAIN_IMAGE_TAG ?= v1
+
 clean-ratelimiter:                     ## clean ratelimiter artifacts
 	rm -rf $(RATELIMITER_LOCATION)/$(RATELIMITER_SUBDIR)
 
@@ -49,3 +54,11 @@ docker-push: diagnose-target-push docker-push-base          ## Push docker image
 
 clean: clean-base clean-ratelimiter    ## clean all build artifacts
 	rm -rf build; \
+
+docker-build-toolchain-container:  ## build docker container for running the build
+	(cd toolchain && docker build --label git-commit=$(shell git rev-list -1 HEAD) -t "$(TOOLCHAIN_DOCKER_HOST)/$(TOOLCHAIN_DOCKER_NAMESPACE)/$(TOOLCHAIN_DOCKER_IMG_NAME):$(TOOLCHAIN_IMAGE_TAG)" .)
+
+docker-push-toolchain-container:  ## build docker container for running the build
+	docker push "$(TOOLCHAIN_DOCKER_HOST)/$(TOOLCHAIN_DOCKER_NAMESPACE)/$(TOOLCHAIN_DOCKER_IMG_NAME):$(TOOLCHAIN_IMAGE_TAG)"
+
+toolchain-container: docker-build-toolchain-container docker-push-toolchain-container ## Build and push toolchain-container

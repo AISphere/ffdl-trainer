@@ -82,16 +82,18 @@ func checkHealth(cmd *cobra.Command, args []string) {
 	if tls {
 		creds, err2 := credentials.NewClientTLSFromFile(caCert, serverName)
 		if err2 != nil {
-			logDebug("Error reading TLS credentials %s\n", err2)
-			os.Exit(1)
+			logDebug("Error reading TLS credentials %v\n", err2)
+			// os.Exit(1)
+			return
 		}
 		conn, err = grpc.Dial(fmt.Sprintf("%s:%d", host, port), grpc.WithBlock(), grpc.WithTimeout(timeout), grpc.WithTransportCredentials(creds))
 	} else {
 		conn, err = grpc.Dial(fmt.Sprintf("%s:%d", host, port), grpc.WithBlock(), grpc.WithTimeout(timeout), grpc.WithInsecure())
 	}
 	if err != nil {
-		logDebug("Cannot connect: %s\n", err)
-		os.Exit(1)
+		logDebug("Cannot connect: %v\n", err)
+		// os.Exit(1)
+		return
 	}
 	defer conn.Close()
 	client := grpc_health_v1.NewHealthClient(conn)
@@ -102,7 +104,7 @@ func checkHealth(cmd *cobra.Command, args []string) {
 		Service: service,
 	})
 	if err != nil {
-		logDebug("Error: ", err.Error())
+		logDebug("Error: %v", err.Error())
 		os.Exit(1)
 	}
 	if resp.Status == grpc_health_v1.HealthCheckResponse_UNKNOWN {
@@ -115,8 +117,8 @@ func checkHealth(cmd *cobra.Command, args []string) {
 	}
 }
 
-func logDebug(v ...interface{}) {
+func logDebug(format string, v ...interface{}) {
 	if debug {
-		log.Println(v)
+		log.Printf(format, v...)
 	}
 }
