@@ -8,8 +8,8 @@ pipeline {
         }
     }
     environment {
-        GOPATH = "${env.JENKINS_HOME}/workspace/git"
-        AISPHERE = "${env.JENKINS_HOME}/workspace/git/src/github.com/AISphere"
+        GOPATH = "${env.WORKSPACE}/git"
+        AISPHERE = "${env.GOPATH}/src/github.com/AISphere"
         PROTOC_ZIP = "protoc-3.6.1-linux-x86_64.zip"
         DOCKER_NAMESPACE = "dlaas_dev"
         DOCKER_REPO_NAME="${env.JOB_NAME}".substring("aisphere/".length(), "${env.JOB_NAME}".length() - "${env.BRANCH_NAME}".length() - 1)
@@ -19,39 +19,39 @@ pipeline {
     }
 
     options {
-        checkoutToSubdirectory("/var/jenkins_home/workspace/git/src/github.com/AISphere")
+        checkoutToSubdirectory("${env.AISPHERE}")
         skipDefaultCheckout()
     }
 
     stages {
         stage('ensure toolchain') {
             steps {
+                sh "rm -rf ${env.AISPHERE}"
                 sh 'printenv'
-                dir("$AISPHERE") {
-                    echo "Testing docker"
-                    sh "docker info"
 
-                    echo "Testing echo from shell"
-                    sh 'echo "hello"'
+                echo "Testing docker"
+                sh "docker info"
 
-                    echo "Testing zip"
-                    sh "which zip"
+                echo "Testing echo from shell"
+                sh 'echo "hello"'
 
-                    echo "Testing protoc"
-                    sh "which protoc"
+                echo "Testing zip"
+                sh "which zip"
 
-                    echo "Testing protoc-gen-go"
-                    sh "which protoc-gen-go"
+                echo "Testing protoc"
+                sh "which protoc"
 
-                    echo "Testing kubectl"
-                    sh "which kubectl"
+                echo "Testing protoc-gen-go"
+                sh "which protoc-gen-go"
 
-                    echo "Testing glide"
-                    sh "which glide"
+                echo "Testing kubectl"
+                sh "which kubectl"
 
-                    echo "Testing go"
-                    sh "go version"
-                }
+                echo "Testing glide"
+                sh "which glide"
+
+                echo "Testing go"
+                sh "go version"
             }
         }
         stage('git checkout') {
