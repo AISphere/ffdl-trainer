@@ -11,10 +11,9 @@ pipeline {
         GOPATH = "${env.JENKINS_HOME}/workspace/git"
         AISPHERE = "${env.JENKINS_HOME}/workspace/git/src/github.com/AISphere"
         PROTOC_ZIP = "protoc-3.6.1-linux-x86_64.zip"
-        // registry = "docker_hub_account/repository_name"
-        // registryCredential = 'dockerhub'
         DOCKER_NAMESPACE = "dlaas_dev"
-        DOCKER_IMG_NAME = "ffdl-trainer"
+        DOCKER_REPO_NAME="${env.JOB_NAME}".substring("aisphere/".length(), "${env.JOB_NAME}".length() - "${env.BRANCH_NAME}".length() - 1)
+        DOCKER_IMG_NAME = "${env.DOCKER_REPO_NAME}"
         DOCKERHUB_CREDENTIALS_ID = "bluemix-cr-ng"
         DOCKERHUB_HOST = "registry.ng.bluemix.net"
     }
@@ -27,12 +26,10 @@ pipeline {
     stages {
         stage('ensure toolchain') {
             steps {
+                sh 'printenv'
                 dir("$AISPHERE") {
                     echo "Testing docker"
                     sh "docker info"
-
-                    echo "Testing env from shell"
-                    sh "env"
 
                     echo "Testing echo from shell"
                     sh 'echo "hello"'
@@ -62,57 +59,50 @@ pipeline {
                 echo 'checking dependent repos out'
 
                 sh "rm -rf ${env.AISPHERE}/git"
+                script {
+                    String[] repos = [
+                            "ffdl-community",
+                            "rest-apis",
+                            "ffdl-dashboard",
+                            "ffdl-model-metrics",
+                            "ffdl-trainer",
+                            "ffdl-lcm",
+                            "ffdl-job-monitor",
+                            "ffdl-commons",
+                            "ffdl-e2e-test"] as String[]
 
-                // Note: I tried to get the names of these dynamically and get the repos in
-                // a loop, but it got too tricky and this is good for now.
-                dir("$AISPHERE/ffdl-community") {
-                    echo "Checking out ffdl-community"
-                    git branch: 'master', url: 'https://github.com/AISphere/ffdl-community.git'
+                    echo "top of loop"
+                    // echo repos
+                    for (String repo in repos) {
+                        echo "------ Considering ${repo} ------"
+                        dir("${env.AISPHERE}/${repo}") {
+                            if (repo == env.DOCKER_REPO_NAME) {
+                                echo "====== Trying to pull ${env.BRANCH_NAME} ${repo} ======"
+                                // If someone knows a better way to do this, please do.
+                                if ("${env.BRANCH_NAME}".startsWith("PR-")) {
+                                    echo "trying to checkout pr"
+                                    checkout([$class           : 'GitSCM', branches: [[name: "FETCH_HEAD"]],
+                                              extensions       : [[$class: 'LocalBranch']],
+                                              userRemoteConfigs: [
+                                                      [refspec: "+refs/pull/${env.CHANGE_ID}/head:refs/remotes/origin/PR-${env.CHANGE_ID}",
+                                                       url    : "https://github.com/AISphere/${env.DOCKER_REPO_NAME}.git"]]])
+                                } else {
+                                    git branch: "${env.BRANCH_NAME}", url: "https://github.com/AISphere/${env.DOCKER_REPO_NAME}.git"
+                                }
+                            } else {
+                                echo "====== Trying to pull master ${repo} ======"
+                                echo "Checking out ${repo}"
+                                git branch: 'master', url: "https://github.com/AISphere/${repo}.git"
+                            }
+                            echo "================================="
+                        }
+                    }
                 }
-                dir("$AISPHERE/rest-apis") {
-                    echo "Checking out rest-apis"
-                    git branch: 'master', url: 'https://github.com/AISphere/rest-apis.git'
-                }
-                dir("$AISPHERE/ffdl-dashboard") {
-                    echo "Checking out ffdl-dashboard"
-                    git branch: 'master', url: 'https://github.com/AISphere/ffdl-dashboard.git'
-                }
-                dir("$AISPHERE/ffdl-model-metrics") {
-                    git branch: 'master', url: 'https://github.com/AISphere/ffdl-model-metrics.git'
-                }
-                dir("$AISPHERE/ffdl-lcm") {
-                    git branch: 'master', url: 'https://github.com/AISphere/ffdl-lcm.git'
-                }
-                dir("$AISPHERE/ffdl-job-monitor") {
-                    git branch: 'master', url: 'https://github.com/AISphere/ffdl-job-monitor.git'
-                }
-                dir("$AISPHERE/ffdl-commons") {
-                    git branch: 'master', url: 'https://github.com/AISphere/ffdl-commons.git'
-                }
-                dir("$AISPHERE/ffdl-e2e-test") {
-                    git branch: 'master', url: 'https://github.com/AISphere/ffdl-e2e-test.git'
-                }
-                dir("$AISPHERE/ffdl-trainer") {
-                    sh 'printenv'
-                    echo "================================="
-                    echo "=== Trying to pull PR ==="
-                    echo "GIT_BRANCH: ${env.GIT_BRANCH}"
-                    echo "GIT_COMMIT: ${env.GIT_COMMIT}"
-                    echo "CHANGE_ID: ${env.CHANGE_ID}"
-
-                    checkout([$class: 'GitSCM', branches: [[name: "FETCH_HEAD"]],
-                              extensions: [[$class: 'LocalBranch']],
-                              userRemoteConfigs: [
-                                      [refspec: "+refs/pull/${env.CHANGE_ID}/head:refs/remotes/origin/PR-${env.CHANGE_ID}",
-                                       url: "https://github.com/AISphere/ffdl-trainer.git"]]])
-
-                    echo "================================="
-                }
-            }
+           }
         }
         stage('install deps') {
             steps {
-                dir("$AISPHERE/ffdl-trainer") {
+                dir("$AISPHERE/${env.DOCKER_REPO_NAME}") {
                     sh "make ensure-protoc-installed"
                     sh "make install-deps-if-needed"
                 }
@@ -120,7 +110,7 @@ pipeline {
         }
         stage('build') {
             steps {
-                dir("$AISPHERE/ffdl-trainer") {
+                dir("$AISPHERE/${env.DOCKER_REPO_NAME}") {
                     sh "make build-x86-64"
                     sh "make build-grpc-health-checker"
                 }
@@ -128,7 +118,7 @@ pipeline {
         }
         stage('docker-build') {
             steps {
-                dir("$AISPHERE/ffdl-trainer") {
+                dir("$AISPHERE/${env.DOCKER_REPO_NAME}") {
                     script {
                         withDockerServer([uri: "unix:///var/run/docker.sock"]) {
                             withDockerRegistry([credentialsId: "${env.DOCKERHUB_CREDENTIALS_ID}",
@@ -144,7 +134,7 @@ pipeline {
         }
         stage('Unit Test') {
             steps {
-                dir("$AISPHERE/ffdl-trainer") {
+                dir("$AISPHERE/${env.DOCKER_REPO_NAME}") {
                     sh "make test-unit"
                 }
             }
@@ -156,7 +146,7 @@ pipeline {
         }
         stage('push') {
             steps {
-                dir("$AISPHERE/ffdl-trainer") {
+                dir("$AISPHERE/${env.DOCKER_REPO_NAME}") {
                     script {
                         withDockerServer([uri: "unix:///var/run/docker.sock"]) {
                             withDockerRegistry([credentialsId: "${env.DOCKERHUB_CREDENTIALS_ID}",
