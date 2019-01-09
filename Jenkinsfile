@@ -81,11 +81,7 @@ pipeline {
                                 // If someone knows a better way to do this, please do.
                                 if ("${env.BRANCH_NAME}".startsWith("PR-")) {
                                     echo "trying to checkout pr"
-                                    checkout([$class           : 'GitSCM', branches: [[name: "FETCH_HEAD"]],
-                                              extensions       : [[$class: 'LocalBranch']],
-                                              userRemoteConfigs: [
-                                                      [refspec: "+refs/pull/${env.CHANGE_ID}/head:refs/remotes/origin/PR-${env.CHANGE_ID}",
-                                                       url    : "https://github.com/AISphere/${env.DOCKER_REPO_NAME}.git"]]])
+                                    LONG_GIT_COMMIT = checkout(scm).GIT_COMMIT
                                 } else {
                                     git branch: "${env.BRANCH_NAME}", url: "https://github.com/AISphere/${env.DOCKER_REPO_NAME}.git"
                                 }
