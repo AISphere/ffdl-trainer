@@ -1,0 +1,4 @@
+static-volumes-v2:
+  - name: static-volume-1
+    zlabel: static-volume-1
+    status: active

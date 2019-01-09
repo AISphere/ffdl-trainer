@@ -41,3 +41,13 @@ Need to adapt tensorflow version in manifest to what is specified on https://git
 
 ## Training
 * If you start a job and `lhelper` and `jobmonitor` pods get to `Running` state, but the corresponding `learner` remains stuck in `ContainerCreating`, please take a look at `kubectl describe pod <learner-pod>`. It is possible that your storage configuration in your manifest is invalid and if so, you should see events that point out the issues.
+
+* If the learner complains `Error mounting volume: s3fs mount failed: s3fs: error while loading shared libraries: libcrypto.so.1.0.0: cannot open shared object file: No such file or directory`, please try
+    ```bash
+    for node in "${arrNodes[@]}"
+    do
+    docker exec -i ${node} /bin/bash <<_EOF
+    apt-get update && apt-get install -y libssl1.0.2 nfs-common libfuse2 libxml2 curl libcurl3
+    _EOF
+    done
+  ```

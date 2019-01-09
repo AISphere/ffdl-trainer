@@ -28,7 +28,7 @@ trainer:
 #  replicas: 1
 #  cpus: 50m
 #  memory: 64Mi
-ffdl-lcm:
+ffdl_lcm:
   lcm:
     image_name: lifecycle-manager-service
     version: v0.1.1

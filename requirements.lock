@@ -1,0 +1,9 @@
+dependencies:
+- name: ffdl-lcm
+  repository: file://../ffdl-lcm
+  version: 0.1.1
+- name: ffdl-model-metrics
+  repository: file://../ffdl-model-metrics
+  version: 0.1.1
+digest: sha256:dc5fefb1319f84f7c1e481f63eff20d825a5014ffc0926235f6da34f8569f361
+generated: 2019-01-06T06:10:13.629091-05:00
