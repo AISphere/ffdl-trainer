@@ -78,7 +78,6 @@ pipeline {
                         dir("${env.AISPHERE}/${repo}") {
                             if (repo == env.DOCKER_REPO_NAME) {
                                 echo "====== Trying to pull ${env.BRANCH_NAME} ${repo} ======"
-                                // If someone knows a better way to do this, please do.
                                 if ("${env.BRANCH_NAME}".startsWith("PR-")) {
                                     echo "trying to checkout pr"
                                     LONG_GIT_COMMIT = checkout(scm).GIT_COMMIT
