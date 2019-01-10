@@ -36,3 +36,24 @@ spec:
     path: "/nfs/var/nfs/general"
 EOF
 ) || true
+
+# Could test like this:
+
+#kubectl create -f - <<EOF
+#apiVersion: v1
+#kind: Pod
+#metadata:
+#  name: nfs-test-pod
+#  namespace: default
+#spec:
+#  containers:
+#  - name: nfs-test-container
+#    image: anaudiyal/infinite-loop
+#    volumeMounts:
+#    - mountPath: "/job"
+#      name: nfs-test-volume
+#  volumes:
+#  - name: nfs-test-volume
+#    persistentVolumeClaim:
+#      claimName: static-volume-1
+#EOF

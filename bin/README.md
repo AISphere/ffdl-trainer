@@ -36,6 +36,20 @@ make deploy-nfs-volume
 make setup-cos-plugin
 make create-volumes
 
+# Currently necessary to copy over library
+docker cp 5f64e5843b30:/usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 ../libcrypto.so.1.1
+
+declare -a arrNodes=($(docker ps --format '{{.Names}}' | grep "kube-node-\|kube-master"))
+for node in "${arrNodes[@]}"
+do
+docker cp /lib/x86_64-linux-gnu/libcrypto.so.1.0.0 ${node}:/root/libcrypto.so.1.0.0
+docker cp ~/libcrypto.so.1.1 ${node}:/root/libcrypto.so.1.1
+docker exec -i ${node} /bin/bash <<_EOF
+cp /root/libcrypto.so.1.0.0 /lib/x86_64-linux-gnu/
+cp /root/libcrypto.so.1.1 /lib/x86_64-linux-gnu/
+_EOF
+done
+
 # Adapt helm rights
 helm init --service-account tiller --tiller-namespace default --upgrade
 # kubectl create serviceaccount --namespace default tiller
@@ -68,7 +82,8 @@ make docker-build docker-push
 # Deploy Trainer
 cd ${GOPATH}/src/github.com/AISphere/ffdl-trainer
 # make deploy
-cd helmdeploy/ && rm -rf * && cd ../charts/ && rm -f * && cd ..
+# Obsolete: cd helmdeploy/ && rm -rf * && cd ../charts/ && rm -f * && cd ..
+mkdir -p helmdeploy && rm -rf helmdeploy/* && rm -rf charts/*
 cp -rf Chart.yaml values.yaml templates helmdeploy && cd helmdeploy/
 helm install --tiller-namespace default -f /Users/fpk/go/src/github.com/AISphere/ffdl-trainer/envs/dev_values.yaml .
 cd ..
@@ -82,6 +97,13 @@ cd ${GOPATH}/src/github.com/AISphere/ffdl-lcm/
 mkdir -p helmdeploy && rm -rf helmdeploy/*
 cp -rf Chart.yaml values.yaml templates helmdeploy
 helm install --tiller-namespace default -f /Users/fpk/go/src/github.com/AISphere/ffdl-trainer/envs/dev_values.yaml /Users/fpk/go/src/github.com/AISphere/ffdl-lcm/helmdeploy
+
+cd ../ffdl-model-metrics/
+make install-deps docker-build docker-push
+mkdir -p helmdeploy && rm -rf helmdeploy/*
+cp -rf Chart.yaml values.yaml templates helmdeploy && cd helmdeploy
+helm install --tiller-namespace default -f /Users/fpk/go/src/github.com/AISphere/ffdl-trainer/envs/dev_values.yaml .
+cd ..
 
 # Print values for gRPC CLI
 make cli-grpc-config
