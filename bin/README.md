@@ -210,3 +210,8 @@ alias kg="kc get"
 alias kdp="kc describe pod"
 alias kgp="kc get pod"
 ```
+
+In order not to accidentally submit your `envs/dev-values.yaml` you can ask git to ignore it:
+```bash
+git update-index --assume-unchanged envs/dev_values.yaml
+```
