@@ -1,5 +1,6 @@
 namespace: default
 k8s_1dot8_or_above: false
+env: dlaas_dev
 docker:
   registry: registry.ng.bluemix.net
   namespace: dlaas_dev
@@ -10,6 +11,11 @@ certs:
   ca_crt: DUMMY
   server_crt: DUMMY
   server_key: DUMMY
+lcm:
+  image_tag: user-fpk
+learner:
+  docker_namespace: dlaas_dev
+  kubeSecret: none
 trainer:
   version: user-fpk
 restapi:
@@ -21,7 +27,7 @@ webui:
   version: user-fpk
 ffdl_lcm:
   namespace: default
-  k8s_1dot8_or_above: true
+  k8s_1dot8_or_above: false
   lcm:
     shared_volume_storage_class: ""
     has_static_volumes: false
@@ -35,6 +41,8 @@ ffdl_lcm:
     image_prefix: dlaas-
     pullPolicy: Always
     imagePullSecret: bluemix-cr-ng
+trainingdata:
+  version: user-fpk
 ffdl-model-metrics:
   namespace: default
   k8s_1dot8_or_above: false
