@@ -679,10 +679,6 @@ func (s *trainerService) CreateTrainingJob(ctx context.Context, req *grpc_traine
 	gpuType := TransformResourceName(req.Training.Resources.GpuType)
 	if gpuType != "" {
 		gpuLimit, gpuFound := s.gpuAvailable[gpuType]
-
-		// FALK
-		fmt.Sprintf("Reached CreateTrainingJob with: %s %s %s", gpuType, gpuLimit, gpuFound)
-
 		if !gpuFound {
 			invalidGpuTypeError := fmt.Sprintf("user entered an invalid gpu type: %s", gpuType)
 			logr.Errorf(invalidGpuTypeError)
