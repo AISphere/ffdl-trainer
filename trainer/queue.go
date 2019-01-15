@@ -83,6 +83,7 @@ func newTrainingJobQueue(mongoURI string, database string, username string, pass
 
 	session, err := ConnectMongo(mongoURI, database, username, password, cert)
 	if err != nil {
+		log.WithError(err).Debugf("Could not connect to Mongo")
 		return nil, err
 	}
 
