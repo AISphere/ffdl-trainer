@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package trainer
 
 import (
@@ -26,24 +25,24 @@ import (
 	"google.golang.org/grpc/status"
 	"gopkg.in/mgo.v2"
 
+	"github.com/AISphere/ffdl-commons/config"
+	"github.com/AISphere/ffdl-commons/logger"
+	"github.com/AISphere/ffdl-commons/metricsmon"
+	"github.com/AISphere/ffdl-lcm/service"
+	client "github.com/AISphere/ffdl-trainer/lcm-client"
 	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/metrics/discard"
 	"github.com/nu7hatch/gouuid"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/ventu-io/go-shortid"
-	"github.com/AISphere/ffdl-commons/config"
-	"github.com/AISphere/ffdl-commons/logger"
-	"github.com/AISphere/ffdl-commons/metricsmon"
-	"github.com/AISphere/ffdl-lcm/service"
-	client "github.com/AISphere/ffdl-trainer/lcm-client"
 
+	tdsService "github.com/AISphere/ffdl-model-metrics/service/grpc_training_data_v1"
+	trainerClient "github.com/AISphere/ffdl-trainer/client"
 	rlClient "github.com/AISphere/ffdl-trainer/plugins/ratelimiter"
 	rlService "github.com/AISphere/ffdl-trainer/plugins/ratelimiter/service/grpc_ratelimiter_v1"
-	trainerClient "github.com/AISphere/ffdl-trainer/client"
-	"github.com/AISphere/ffdl-trainer/trainer/grpc_trainer_v2"
 	tdsClient "github.com/AISphere/ffdl-trainer/tds-client"
-	tdsService "github.com/AISphere/ffdl-model-metrics/service/grpc_training_data_v1"
+	"github.com/AISphere/ffdl-trainer/trainer/grpc_trainer_v2"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 
@@ -181,7 +180,7 @@ func (metrics *clientServerErrorMetricsBunchStruct) incrementClientServerErrorMe
 // Service represents the functionality of the trainer service
 type Service interface {
 	grpc_trainer_v2.TrainerServer
-		service.LifecycleHandler
+	service.LifecycleHandler
 	StopTrainer()
 }
 
@@ -2032,7 +2031,7 @@ func (s *trainerService) lcmClient() (client.LcmClient, error) {
 
 func (s *trainerService) tdsClient() (tdsClient.TrainingDataClient, error) {
 	if s.tds == nil {
-		address := fmt.Sprintf("ffdl-trainingdata.%s.svc.cluster.local:80", config.GetPodNamespace())
+		address := fmt.Sprintf("%s.%s.svc.cluster.local:80", config.GetValue(config.TdsServiceName), config.GetPodNamespace())
 		tds, err := tdsClient.NewTrainingDataClientWithAddress(address)
 		if err != nil {
 			return nil, err
@@ -2044,7 +2043,7 @@ func (s *trainerService) tdsClient() (tdsClient.TrainingDataClient, error) {
 
 func (s *trainerService) rlClient() (rlClient.RatelimiterClient, error) {
 	if s.ratelimiter == nil {
-		address := fmt.Sprintf("dlaas-ratelimiter.%s.svc.cluster.local:80", config.GetPodNamespace())
+		address := fmt.Sprintf("%s.%s.svc.cluster.local:80", config.GetValue(config.RateLimiterServiceName), config.GetPodNamespace())
 		ratelimiter, err := rlClient.NewRatelimiterClientWithAddress(address)
 		if err != nil {
 			return nil, err

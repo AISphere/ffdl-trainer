@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-
 package client
 
 import (
 	"fmt"
 
+	"github.com/AISphere/ffdl-commons/config"
+	"github.com/AISphere/ffdl-commons/util"
+	"github.com/AISphere/ffdl-lcm/service"
 	"github.com/grpc-ecosystem/go-grpc-prometheus"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"github.com/AISphere/ffdl-commons/config"
-	"github.com/AISphere/ffdl-lcm/service"
-	"github.com/AISphere/ffdl-commons/util"
 	"google.golang.org/grpc"
 )
 
@@ -52,7 +51,7 @@ type lcmClient struct {
 // service. If the dns_server config option is set to 'disabled/, it will
 // default to localhost:port.
 func NewLcm(lcm service.LifecycleManagerClient) (LcmClient, error) {
-	address := fmt.Sprintf("ffdl-lcm.%s.svc.cluster.local:80", config.GetPodNamespace())
+	address := fmt.Sprintf("%s.%s.svc.cluster.local:80", config.GetValue(config.LcmServiceName), config.GetPodNamespace())
 	dnsServer := viper.GetString("dns_server")
 	if dnsServer == disabled { // for local testing without DNS server
 		address = LcmLocalAddress

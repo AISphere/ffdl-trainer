@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package client
 
 import (
@@ -60,13 +59,12 @@ func NewTrainingDataClient() (TrainingDataClient, error) {
 
 // NewTrainingDataClientFromExisting creates a wrapper around an existing client.  Used at least for mock clients.
 //noinspection GoUnusedExportedFunction
-func NewTrainingDataClientFromExisting(tds grpc_training_data_v1.TrainingDataClient ) (TrainingDataClient, error) {
+func NewTrainingDataClientFromExisting(tds grpc_training_data_v1.TrainingDataClient) (TrainingDataClient, error) {
 	return &trainerStatusClient{
 		conn:   nil,
 		client: tds,
 	}, nil
 }
-
 
 // NewTrainingDataClientWithAddress create a new load-balanced client to talk to the training metrics
 // service. If the dns_server config option is set to 'disabled', it will
@@ -81,7 +79,7 @@ func NewTrainingDataClientWithAddress(addr string) (TrainingDataClient, error) {
 		address = addr
 		logr.Debugf("DNS disabled: Running passed in address: %v", address)
 	} else {
-		address = fmt.Sprintf("ffdl-trainingdata.%s.svc.cluster.local:80", config.GetPodNamespace())
+		address = fmt.Sprintf("%s.%s.svc.cluster.local:80", config.GetValue(config.TdsServiceName), config.GetPodNamespace())
 		logr.Debugf("ffdl-trainingdata address: %v", address)
 	}
 	logr.Debugf("IsTLSEnabled: %t", config.IsTLSEnabled())

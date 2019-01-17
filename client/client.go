@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package client
 
 import (
@@ -23,10 +22,10 @@ import (
 	"github.com/AISphere/ffdl-commons/config"
 	"github.com/AISphere/ffdl-commons/util"
 
+	"github.com/AISphere/ffdl-trainer/trainer/grpc_trainer_v2"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
-	"github.com/AISphere/ffdl-trainer/trainer/grpc_trainer_v2"
 )
 
 const (
@@ -57,7 +56,7 @@ func NewTrainer() (TrainerClient, error) {
 // service. If the dns_server config option is set to 'disabled', it will
 // default to the pre-defined LocalPort of the service.
 func NewTrainerWithAddress(addr string) (TrainerClient, error) {
-	address := fmt.Sprintf("ffdl-trainer.%s.svc.cluster.local:80", config.GetPodNamespace())
+	address := fmt.Sprintf("%s.%s.svc.cluster.local:80", config.GetValue(config.TrainerServiceName), config.GetPodNamespace())
 	dnsServer := viper.GetString("dns_server")
 	if dnsServer == disabled { // for local testing without DNS server
 		address = addr

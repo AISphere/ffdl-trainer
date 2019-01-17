@@ -14,8 +14,8 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/AISphere/ffdl-commons/config"
-	"github.com/AISphere/ffdl-commons/util"
 	"github.com/AISphere/ffdl-commons/logger"
+	"github.com/AISphere/ffdl-commons/util"
 	"github.com/AISphere/ffdl-trainer/plugins/ratelimiter/service/grpc_ratelimiter_v1"
 
 	log "github.com/sirupsen/logrus"
@@ -69,7 +69,7 @@ func NewRatelimiterClientWithAddress(addr string) (RatelimiterClient, error) {
 		address = addr
 		logr.Debugf("DNS disabled: Running passed in address: %v", address)
 	} else {
-		address = fmt.Sprintf("dlaas-ratelimiter.%s.svc.cluster.local:80", config.GetPodNamespace())
+		address = fmt.Sprintf("%s.%s.svc.cluster.local:80", config.GetValue(config.RateLimiterServiceName), config.GetPodNamespace())
 		logr.Debugf("dlaas-ratelimiter address: %v", address)
 	}
 	logr.Debugf("IsTLSEnabled: %t", config.IsTLSEnabled())
