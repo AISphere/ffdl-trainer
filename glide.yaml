@@ -4,7 +4,7 @@ ignore:
 - github.com/AISphere/ffdl-model-metrics
 import:
 - package: github.com/AISphere/ffdl-commons
-  version: travis-ci
+  version: master
   repo: https://github.com/AISphere/ffdl-commons.git
   subpackages:
   - config

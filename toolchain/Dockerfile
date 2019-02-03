@@ -33,8 +33,8 @@ RUN apt-get install -y apt-transport-https ca-certificates software-properties-c
 RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
 RUN add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable"
 RUN apt-get update
+RUN apt-get install -y rsync
 RUN apt-get install -y docker-ce
-
 RUN apt-get install -y zip
 
 RUN curl -OL https://github.com/google/protobuf/releases/download/v3.6.1/$PROTOC_ZIP
