@@ -22,6 +22,7 @@ trainer:
   cpus: 100m
   memory: 64Mi
   gpu_limits: nvidia-TeslaK80=20,nvidia-TeslaP100=10
+  ratelimiter_service_name: ""
 #restapi:
 #  version: v0.1.1
 #  port: 0
@@ -42,8 +43,6 @@ ffdl-lcm:
     device_plugin: true
     # This will used for "volume.beta.kubernetes.io/storage-class" for the shared volume
     shared_volume_storage_class: ""
-    trainer_service_name: "ffdl-trainer"
-    data_service_name: "ffdl-trainingdata"
     image_tag: "dev"
   learner:
     tag: master-97
@@ -92,3 +91,11 @@ grafana:
   port: 3000
 log:
   level: INFO
+global:
+  trainer_service_name: "ffdl-trainer"
+  lcm_service_name: "ffdl-lcm"
+  tds_service_name: "ffdl-trainingdata"
+
+#  DLAAS_TRAINER_SERVICE_NAME: "dlaas-trainer-v2"
+#  DLAAS_LCM_SERVICE_NAME: "dlaas-lcm"
+#  DLAAS_TDS_SERVICE_NAME: "dlaas-training-data"

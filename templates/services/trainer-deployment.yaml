@@ -44,6 +44,10 @@ spec:
         ports:
         - containerPort: 8443
         env:
+        - name: DLAAS_TRAINER_SERVICE_NAME
+          value: "{{.Values.global.trainer_service_name}}"
+        - name: DLAAS_LCM_SERVICE_NAME
+          value: "{{.Values.global.lcm_service_name}}"
         - name: DLAAS_POD_NAMESPACE
           valueFrom:
             fieldRef:
