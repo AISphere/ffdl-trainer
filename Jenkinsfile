@@ -125,7 +125,7 @@ pipeline {
             steps {
                 dir("$AISPHERE/${env.DOCKER_REPO_NAME}") {
                     script {
-                        withEnv(["DLAAS_IMAGE_TAG=${env.JOB_BASE_NAME}",
+                        withEnv(["DLAAS_IMAGE_TAG=${env.JOB_BASE_NAME}-ffdl",
                                  "DOCKER_HOST_NAME=${env.DOCKERHUB_HOST}",
                                  "DOCKER_NAMESPACE=$DOCKER_NAMESPACE", "DOCKER_IMG_NAME=$DOCKER_IMG_NAME"]) {
                             echo "make docker-build"
@@ -154,7 +154,7 @@ pipeline {
                         withDockerServer([uri: "unix:///var/run/docker.sock"]) {
                             withDockerRegistry([credentialsId: "${env.DOCKERHUB_CREDENTIALS_ID}",
                                                 url: "https://registry.ng.bluemix.net"]) {
-                                withEnv(["DLAAS_IMAGE_TAG=${env.JOB_BASE_NAME}",
+                                withEnv(["DLAAS_IMAGE_TAG=${env.JOB_BASE_NAME}-ffdl",
                                          "DOCKER_HOST_NAME=${env.DOCKERHUB_HOST}",
                                          "DOCKER_NAMESPACE=$DOCKER_NAMESPACE", "DOCKER_IMG_NAME=$DOCKER_IMG_NAME"]) {
                                     // sh "docker build -t \"${env.DOCKERHUB_HOST}/$DOCKER_NAMESPACE/$DOCKER_IMG_NAME:$DLAAS_IMAGE_TAG\" ."
