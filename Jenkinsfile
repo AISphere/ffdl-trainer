@@ -51,13 +51,12 @@ pipeline {
                 sh "which glide"
 
                 echo "Testing rsync"
-                sh "which rsync"
+                sh "which rrsync"
 
                 echo "Testing go"
                 sh "go version"
             }
         }
-        x blah blah
         stage('git checkout') {
             steps {
                 echo 'checking dependent repos out'
