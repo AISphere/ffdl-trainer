@@ -57,6 +57,7 @@ pipeline {
                 sh "go version"
             }
         }
+        x blah blah
         stage('git checkout') {
             steps {
                 echo 'checking dependent repos out'
