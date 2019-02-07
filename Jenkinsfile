@@ -109,6 +109,7 @@ pipeline {
                 dir("$AISPHERE/${env.DOCKER_REPO_NAME}") {
                     // Wait until after code reversal to do lints
                     // sh "make lint"
+                    echo "calling make vet"
                     sh "make vet"
                 }
             }
