@@ -51,7 +51,7 @@ pipeline {
                 sh "which glide"
 
                 echo "Testing rsync"
-                sh "which rrsync"
+                sh "which rsync"
 
                 echo "Testing go"
                 sh "go version"
@@ -85,7 +85,7 @@ pipeline {
                             } else {
                                 echo "====== Trying to pull master ${repo} ======"
                                 echo "Checking out ${repo}"
-                                git branch: 'master', url: "https://github.com/AISphere/${repo}.git"
+                                git bbranch: 'master', url: "https://github.com/AISphere/${repo}.git"
                             }
                             echo "================================="
                         }
