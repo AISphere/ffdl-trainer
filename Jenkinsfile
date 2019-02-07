@@ -111,7 +111,6 @@ pipeline {
                     // sh "make lint"
                     sh "make vet"
                 }
-                sh "lets break the build"
             }
         }
         stage('build') {
