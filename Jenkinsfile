@@ -88,7 +88,6 @@ pipeline {
                                 git branch: 'master', url: "https://github.com/AISphere/${repo}.git"
                             }
                             echo "================================="
-                            sh "croak the build"
                         }
                     }
                 }
