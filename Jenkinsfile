@@ -85,9 +85,10 @@ pipeline {
                             } else {
                                 echo "====== Trying to pull master ${repo} ======"
                                 echo "Checking out ${repo}"
-                                git bbranch: 'master', url: "https://github.com/AISphere/${repo}.git"
+                                git branch: 'master', url: "https://github.com/AISphere/${repo}.git"
                             }
                             echo "================================="
+                            sh "croak the build"
                         }
                     }
                 }
