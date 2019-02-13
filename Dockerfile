@@ -15,13 +15,7 @@
 #
 
 
-FROM ubuntu:16.04
-
-ENV DEBIAN_FRONTEND noninteractive
-RUN apt-get update && apt-get install --yes ca-certificates curl ldnsutils
-
-ADD vendor/github.com/AISphere/ffdl-commons/grpc-health-checker/bin/grpc-health-checker /usr/local/bin/
-RUN chmod +x /usr/local/bin/grpc-health-checker
+FROM dlaas-service-base:ubuntu16.04
 
 ADD bin/main /main
 RUN chmod 755 /main

@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2017-2018 IBM Corporation
  *
@@ -29,42 +28,42 @@ import (
 
 // TrainingStatusUpdate captures the details for training status update events
 type TrainingStatusUpdate struct {
-	Status grpc_trainer_v2.Status
-	Timestamp string
-	ErrorCode string
+	Status        grpc_trainer_v2.Status
+	Timestamp     string
+	ErrorCode     string
 	StatusMessage string
 }
 
 const (
 	// ErrCodeNormal indicates a normal non-error situation
-	ErrCodeNormal                 = "000"
+	ErrCodeNormal = "000"
 
 	// SERVER ERRORS
 
 	// ErrCodeInsufficientResources indicates a scheduling error due to resource constraints
-	ErrCodeInsufficientResources  = "S100"
+	ErrCodeInsufficientResources = "S100"
 	// ErrCodeFailedDeploy indicates a general deployment error
-	ErrCodeFailedDeploy           = "S101"
+	ErrCodeFailedDeploy = "S101"
 	// ErrCodeFailedPS ...
-	ErrCodeFailedPS               = "S102"
+	ErrCodeFailedPS = "S102"
 	// ErrCodeImagePull indicates an image pull error
-	ErrCodeImagePull              = "S103"
+	ErrCodeImagePull = "S103"
 	// ErrFailedPodReasonUnknown indicates an unknown pod error
-	ErrFailedPodReasonUnknown     = "S104"
+	ErrFailedPodReasonUnknown = "S104"
 	// ErrCodeK8SConnection indicates a kubernetes connection error
-	ErrCodeK8SConnection          = "S200"
+	ErrCodeK8SConnection = "S200"
 	// ErrCodeEtcdConnection indicates a etcd connection error
-	ErrCodeEtcdConnection         = "S201"
+	ErrCodeEtcdConnection = "S201"
 	// ErrCodeFailEnqueue indicates an error while adding the job to the queue in mongo
-	ErrCodeFailEnqueue            = "S210"
+	ErrCodeFailEnqueue = "S210"
 	// ErrCodeFailDequeue indicates an error where a job was incorrectly dequeued
-	ErrCodeFailDequeue            = "S211"
+	ErrCodeFailDequeue = "S211"
 	// ErrCodeFailLoadModel indicates an error while loading the model code
-	ErrCodeFailLoadModel          = "S301"
+	ErrCodeFailLoadModel = "S301"
 	// ErrCodeFailLoadData indicates an error while loading the training data
-	ErrCodeFailLoadData           = "S302"
+	ErrCodeFailLoadData = "S302"
 	// ErrCodeFailStoreResults indicates an error while storing the trained model and logs
-	ErrCodeFailStoreResults       = "S303"
+	ErrCodeFailStoreResults = "S303"
 	// ErrCodeFailStoreResultsOnFail indicates an error while storing the logs on job error
 	ErrCodeFailStoreResultsOnFail = "S304"
 	// ErrCodeFailStoreResultsOnHalt indicates an error while storing the logs on job halt
@@ -73,17 +72,16 @@ const (
 	// CLIENT ERRORS
 
 	// ErrInvalidManifestFile indicates an invalid manifest file
-	ErrInvalidManifestFile    = "C101"
+	ErrInvalidManifestFile = "C101"
 	// ErrInvalidZipFile indicates an invalid ZIP file
-	ErrInvalidZipFile         = "C102"
+	ErrInvalidZipFile = "C102"
 	// ErrInvalidCredentials indicates an invalid set of credentials
-	ErrInvalidCredentials     = "C103"
+	ErrInvalidCredentials = "C103"
 	// ErrInvalidResourceSpecs indicates invalid resouce specifications
-	ErrInvalidResourceSpecs   = "C104"
+	ErrInvalidResourceSpecs = "C104"
 	// ErrLearnerProcessCrash indicates a crash of the process in the learner container
-	ErrLearnerProcessCrash    = "C201"
+	ErrLearnerProcessCrash = "C201"
 )
-
 
 // CurrentTimestampAsString returns the current time as milliseconds since
 // the Unix epoch (e.g., "1519135679722")
@@ -95,7 +93,7 @@ func CurrentTimestampAsString() string {
 // GetStatus converts between a string and proper DLaaS type of job status updates.
 // The value parameter is either a status string (e.g., "PROCESSING"), or a JSON string
 // with status and error details, e.g., '{"status":"FAILED","exit_code":"51","status_message":"Error opening ZIP file"}'
-func GetStatus(value string, logr *logger.LocLoggingEntry) (*TrainingStatusUpdate) {
+func GetStatus(value string, logr *logger.LocLoggingEntry) *TrainingStatusUpdate {
 	status := value
 	statusMessage := service.StatusMessages_NORMAL_OPERATION.String()
 	errorCode := ""

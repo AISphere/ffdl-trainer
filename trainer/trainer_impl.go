@@ -17,47 +17,44 @@
 package trainer
 
 import (
+	"archive/zip"
 	"bufio"
+	"bytes"
+	"errors"
 	"fmt"
+	"github.com/blend/go-sdk/yaml"
 	"io"
+	"regexp"
+	"strconv"
+	"strings"
 	"sync"
-
-	"google.golang.org/grpc/status"
-	"gopkg.in/mgo.v2"
+	"time"
 
 	"github.com/AISphere/ffdl-commons/config"
 	"github.com/AISphere/ffdl-commons/logger"
 	"github.com/AISphere/ffdl-commons/metricsmon"
 	"github.com/AISphere/ffdl-lcm/service"
+	tdsClient "github.com/AISphere/ffdl-model-metrics/client"
+	tdsService "github.com/AISphere/ffdl-model-metrics/service/grpc_training_data_v1"
+	trainerClient "github.com/AISphere/ffdl-trainer/client"
+	"github.com/AISphere/ffdl-trainer/instrumentation"
 	client "github.com/AISphere/ffdl-trainer/lcm-client"
+	"github.com/AISphere/ffdl-trainer/storage"
+	"github.com/AISphere/ffdl-trainer/trainer/grpc_trainer_v2"
+	rlClient "github.com/AISphere/ffdl/ratelimiter/client"
+	rlService "github.com/AISphere/ffdl/ratelimiter/service/grpc_ratelimiter_v1"
 	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/metrics/discard"
 	"github.com/nu7hatch/gouuid"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/ventu-io/go-shortid"
-
-	tdsService "github.com/AISphere/ffdl-model-metrics/service/grpc_training_data_v1"
-	trainerClient "github.com/AISphere/ffdl-trainer/client"
-	rlClient "github.com/AISphere/ffdl-trainer/plugins/ratelimiter"
-	rlService "github.com/AISphere/ffdl-trainer/plugins/ratelimiter/service/grpc_ratelimiter_v1"
-	tdsClient "github.com/AISphere/ffdl-trainer/tds-client"
-	"github.com/AISphere/ffdl-trainer/trainer/grpc_trainer_v2"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
-
-	"time"
-
-	"regexp"
-	"strconv"
-	"strings"
-
+	"google.golang.org/grpc/status"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/yaml.v2"
-
-	"errors"
-
-	"github.com/AISphere/ffdl-trainer/instrumentation"
-	"github.com/AISphere/ffdl-trainer/storage"
+	v1resource "k8s.io/apimachinery/pkg/api/resource"
 )
 
 const internalObjectStoreID = "dlaas_internal_os"
@@ -66,7 +63,6 @@ const (
 	modelsBucketKey        = "objectstore.bucket.models"
 	trainedModelsBucketKey = "objectstore.bucket.trainedmodels"
 
-	defaultModelsBucket        = "dlaas-models"
 	defaultTrainedModelsBucket = "dlaas-trained-models"
 
 	collectionNameTrainingJobs = "training_jobs"
@@ -84,8 +80,8 @@ const (
 	gpuLimitsKey          = "gpu.limits"
 	gpuLimitsQuerySizeKey = "gpu.limits.query.size"
 	queueSizeLimitKey     = "queue.size.limit"
-
-	pollIntervalKey = "queue.poll.interval"
+	noResultBucketTag     = "none"
+	pollIntervalKey       = "queue.poll.interval"
 )
 
 const (
@@ -236,7 +232,7 @@ func NewService() Service {
 		trainingJobFailedCounter:          metricsmon.NewCounter("trainer_trainings_failed_total", "Metrics for failed training jobs", []string{"framework", "version", "gpus", "cpus", "memory", "type", "errorcode"}),
 		trainingJobFailedMetricsBunch: failedTrainingMetricsBunchStruct{
 			trainingJobFailedFrameworkCounter: metricsmon.NewCounter("trainer_trainings_framework_failed_total", "Metrics for failed training jobs per framework", []string{"type", "framework", "version"}),
-			trainingJobFailedGPUTypeCounter:   metricsmon.NewCounter("trainer_trainings_gputype_failed_total", "Metrics for failed training jobs per gpuType", []string{"type", "gpuType"}),
+			trainingJobFailedGPUTypeCounter:   metricsmon.NewCounter("trainer_trainings_gpuType_failed_total", "Metrics for failed training jobs per gpuType", []string{"type", "gpuType"}),
 			trainingJobFailedCPUCounter:       metricsmon.NewCounter("trainer_trainings_cpus_failed_total", "Metrics for failed training jobs with per cpus", []string{"type", "cpus"}),
 			trainingJobFailedGPUCounter:       metricsmon.NewCounter("trainer_trainings_gpus_failed_total", "Metrics for failed training jobs with per gpus", []string{"type", "gpus"}),
 			clientServerErrorMetricsBunch: clientServerErrorMetricsBunchStruct{
@@ -264,16 +260,23 @@ func NewService() Service {
 	}
 
 	initMetrics(&trainerMetrics)
-
-	ds, err := storage.CreateDataStore(config.GetDataStoreType(), config.GetDataStoreConfig())
-	if err != nil {
-		logr.WithError(err).Fatalf("Cannot create datastore")
-		trainerMetrics.trainerServiceRestartCounter.With("reason", "datastore").Add(1)
-	}
-	err = ds.Connect()
-	if err != nil {
-		logr.WithError(err).Fatalf("Cannot connect to object store")
-		trainerMetrics.trainerServiceRestartCounter.With("reason", "objectstore").Add(1)
+	var ds storage.DataStore
+	var err error
+	dsType := config.GetDataStoreType()
+	if dsType != "" {
+		ds, err = storage.CreateDataStore(dsType, config.GetDataStoreConfig())
+		if err != nil {
+			logr.WithError(err).Fatalf("Cannot create datastore")
+			trainerMetrics.trainerServiceRestartCounter.With("reason", "datastore").Add(1)
+		}
+		err = ds.Connect()
+		if err != nil {
+			logr.WithError(err).Fatalf("Cannot connect to object store")
+			trainerMetrics.trainerServiceRestartCounter.With("reason", "objectstore").Add(1)
+		}
+		logr.Infof("Using dlaas object store of type %s", dsType)
+	} else {
+		logr.Infof("Not using a dlaas object store")
 	}
 
 	repo, err := newTrainingsRepository(viper.GetString(mongoAddressKey),
@@ -339,6 +342,7 @@ func NewService() Service {
 	}
 	logr.Infof("Bucket for model definitions: %s", s.modelsBucket)
 	logr.Infof("Bucket for trained models: %s", s.trainedModelsBucket)
+	logr.Infof("Datastore type is of type: %s", fmt.Sprintf("%T", ds))
 
 	s.RegisterService = func() {
 		grpc_trainer_v2.RegisterTrainerServer(s.Server, s)
@@ -350,6 +354,8 @@ func NewService() Service {
 // NewTestService creates a new service instance for testing
 func NewTestService(ds storage.DataStore, repo repository, jobHistoryRepo jobHistoryRepository,
 	lcm client.LcmClient, tds tdsClient.TrainingDataClient, ratelimiter rlClient.RatelimiterClient, queues map[string]*queueHandler) Service {
+
+	logr := logger.LogServiceBasic(logger.LogkeyTrainerService)
 
 	config.SetDefault(gpuLimitsQuerySizeKey, 100)
 	config.SetDefault(pollIntervalKey, 1) // set poll interval lower to run tests faster
@@ -417,6 +423,11 @@ func NewTestService(ds storage.DataStore, repo repository, jobHistoryRepo jobHis
 		queues:              queues,
 		queuesStarted:       false,
 		gpuAvailable:        gpuAvailable,
+	}
+
+	logr.Infof("Datastore type is of type: %s", fmt.Sprintf("%T", ds))
+	if ds == nil {
+		logr.Infof("Datastore value is nil")
 	}
 
 	s.RegisterService = func() {
@@ -674,6 +685,11 @@ func (s *trainerService) CreateTrainingJob(ctx context.Context, req *grpc_traine
 		return nil, err
 	}
 
+	if req.Training == nil || req.Training.Resources == nil {
+		resourcesNotSpecifiedTypeError := fmt.Sprintf("user did not specify any valid training resources")
+		logr.Errorf(resourcesNotSpecifiedTypeError)
+		return nil, gerrf(codes.InvalidArgument, grpcErrorDesc(errors.New(resourcesNotSpecifiedTypeError)))
+	}
 	// Validate the gpu type
 	gpuType := TransformResourceName(req.Training.Resources.GpuType)
 	if gpuType != "" {
@@ -688,9 +704,10 @@ func (s *trainerService) CreateTrainingJob(ctx context.Context, req *grpc_traine
 			return nil, gerrf(codes.InvalidArgument, grpcErrorDesc(errors.New(unsupportedGpuTypeError)))
 		}
 	}
-
 	setDefaultResourceRequirements(req.Training)
 
+	cpuCount := v1resource.NewMilliQuantity(int64(float64(req.Training.Resources.Cpus)*1000.0), v1resource.DecimalSI)
+	memCount := fmt.Sprintf("%v-%v", req.Training.Resources.Memory, req.Training.Resources.MemoryUnit)
 	//request is validated, now bump up the counter
 	logFrameworkVersionValue := fmt.Sprintf("%s-%s", req.ModelDefinition.Framework.Name, req.ModelDefinition.Framework.Version)
 	logGpuTypeUsagesValue := fmt.Sprintf("%s-%v", req.Training.Resources.GpuType, req.Training.Resources.Gpus)
@@ -699,9 +716,12 @@ func (s *trainerService) CreateTrainingJob(ctx context.Context, req *grpc_traine
 		logger.LogkeyFrameworkVersion: logFrameworkVersionValue,
 		logger.LogkeyGpuType:          req.Training.Resources.GpuType,
 		logger.LogkeyGpuUsage:         logGpuTypeUsagesValue,
+		"image_tag":                   req.ModelDefinition.Framework.ImageTag,
+		"cpu_usage":                   cpuCount,
+		"memory":                      memCount,
 	})
 
-	logr.Debug(" metrics for total number of training jobs ")
+	logr.Infof(" metrics for total number of training jobs ")
 
 	s.metrics.createTrainingJobCounter.With("framework", req.ModelDefinition.Framework.Name,
 		"version", req.ModelDefinition.Framework.Version,
@@ -719,18 +739,21 @@ func (s *trainerService) CreateTrainingJob(ctx context.Context, req *grpc_traine
 	s.metrics.createTrainingJobGauge.Add(1)
 
 	outputDatastore := s.getOutputDatastore(req.Training.OutputData, req.Datastores)
-
 	// upload model definition ZIP file to object store and set location
-	if req.ModelDefinition.Content != nil {
-		// Upload to DLaaS Object store.
-		err := s.datastore.UploadArchive(s.modelsBucket, getModelZipFileName(id), req.ModelDefinition.Content)
-		if err != nil {
-			logr.WithError(err).Errorf("Error uploading model to object store")
-			s.metrics.uploadModelFailedCounter.With("kind", dlaasStoreKind).Add(1)
-			return nil, err
+	if req.ModelDefinition.Content != nil && strings.ToLower(outputDatastore.Fields["bucket"]) != noResultBucketTag {
+		// Upload to DLaaS Object store, if there's one defined.
+		if s.datastore != nil {
+			err := s.datastore.UploadArchive(s.modelsBucket, getModelZipFileName(id), req.ModelDefinition.Content)
+			if err != nil {
+				logr.WithError(err).Errorf("Error uploading model to object store")
+				s.metrics.uploadModelFailedCounter.With("kind", dlaasStoreKind).Add(1)
+				return nil, err
+			}
+			req.ModelDefinition.Location = fmt.Sprintf("%s/%s.zip", s.modelsBucket, id)
+			cl.Observe("uploaded model to dlaas object store")
+		} else {
+			logr.Infof("Not uploading model to dlaas object store")
 		}
-		req.ModelDefinition.Location = fmt.Sprintf("%s/%s.zip", s.modelsBucket, id)
-		cl.Observe("uploaded model to dlaas object store")
 
 		// Upload to user's result object store.
 		ds, err := storage.CreateDataStore(outputDatastore.Type, outputDatastore.Connection)
@@ -755,6 +778,7 @@ func (s *trainerService) CreateTrainingJob(ctx context.Context, req *grpc_traine
 			logr.WithError(err).Errorf("Error uploading model to output object store")
 			return nil, err
 		}
+		req.ModelDefinition.Location = fmt.Sprintf("%s/%s", bucket, object) // may overwrite the path to the dlaas object store
 		cl.Observe("uploaded model to user's object store")
 	}
 
@@ -1018,11 +1042,6 @@ func updateTrainingJobPostLock(s *trainerService, req *grpc_trainer_v2.UpdateReq
 				errorType = "client"
 			}
 
-			logFrameworkErrorsValue := fmt.Sprintf("%s-%s-%s", training.ModelDefinition.Framework.Name, errorType, req.ErrorCode)
-			logr.WithFields(logrus.Fields{
-				"framework_errors": logFrameworkErrorsValue,
-			}).Debug(" metrics for failed training jobs framework")
-
 			counter = s.metrics.trainingJobFailedCounter.With("type", errorType, "errorcode", req.ErrorCode)
 
 			s.metrics.trainingJobFailedMetricsBunch.incrementFailedTrainingMetrics(training.ModelDefinition.Framework.Name, training.ModelDefinition.Framework.Version,
@@ -1076,7 +1095,17 @@ func updateTrainingJobPostLock(s *trainerService, req *grpc_trainer_v2.UpdateReq
 		return nil, gerrf(codes.NotFound, "Training with id %s not found.", req.TrainingId)
 	}
 	ts = training.TrainingStatus
-	logr.Debugf("CHECKING Stored training %s, Status %s Error Code %s Message %s", req.TrainingId, ts.Status, ts.ErrorCode, ts.StatusMessage)
+	logGpuTypeUsagesValue := fmt.Sprintf("%s-%v", training.Training.GetResources().GpuType, strconv.Itoa(int(training.Training.Resources.Gpus)))
+	logFrameworkVersionValue := fmt.Sprintf("%s-%s", training.ModelDefinition.Framework.Name, training.ModelDefinition.Framework.Version)
+
+	logr.WithFields(logrus.Fields{
+		logger.LogkeyFrameworkVersion: logFrameworkVersionValue,
+		logger.LogkeyGpuType:          training.Training.GetResources().GpuType,
+		logger.LogkeyGpuUsage:         logGpuTypeUsagesValue,
+		logger.LogkeyErrorCode:        req.ErrorCode,
+		"training_status":             ts.Status,
+		"training_status_message":     ts.StatusMessage,
+	}).Infof("CHECKING metrics for training in updateTrainingJobPostLock")
 
 	// Additionally, store any job state transitions in the job_history DB collection
 	// We store a history record if either (1) the status is different, or (2) if this is
@@ -1273,12 +1302,14 @@ func (s *trainerService) DeleteTrainingJob(ctx context.Context,
 		}()
 
 		// delete model content from data store
-		err = s.datastore.DeleteArchive(s.modelsBucket, getModelZipFileName(job.JobId))
-		if err != nil {
-			logr.WithError(err).Errorf("Error deleting model from object store")
-			// log this error, but continue with deleting the training record anyway
+		if s.datastore != nil {
+			err = s.datastore.DeleteArchive(s.modelsBucket, getModelZipFileName(job.JobId))
+			if err != nil {
+				logr.WithError(err).Errorf("Error deleting model from object store")
+				// log this error, but continue with deleting the training record anyway
+			}
+			cl.Observe("deleted model from object store")
 		}
-		cl.Observe("deleted model from object store")
 
 		// delete from DB
 		err = s.repo.Delete(job.TrainingId)
@@ -1323,14 +1354,8 @@ func (s *trainerService) HaltTrainingJob(ctx context.Context, req *grpc_trainer_
 
 		ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 		defer cancel()
-		/*		Halt in the LCM isn't working, but with mounted cos, the kill should be fine.  All results
-				        should be in COS either way.  Use Kill instead, which is well tested
-						_, err = lcm.Client().HaltTrainingJob(ctx, &service.JobHaltRequest{
-							Name:       job.JobId,
-							TrainingId: job.TrainingId,
-							UserId:     job.UserId,
-						})
-		*/
+		/* Halt in the LCM isn't working, but with mounted cos, the kill should be fine.  All results
+		should be in COS either way.  Use Kill instead, which is well tested */
 		_, err = lcm.Client().KillTrainingJob(ctx, &service.JobKillRequest{
 			Name:       job.JobId,
 			TrainingId: job.TrainingId,
@@ -1386,6 +1411,12 @@ func (s *trainerService) GetModelDefinition(req *grpc_trainer_v2.ModelDefinition
 		return gerrf(codes.NotFound, "Training with id '%s' not found.", req.TrainingId)
 	}
 
+	if s.datastore == nil {
+		msg := "Operation not supported. Download the model from the result directory"
+		logr.Errorf(msg)
+		return errors.New(msg)
+	}
+
 	// TODO we need to change this to accept a writer to be more efficient
 	payload, err := s.datastore.DownloadArchive(s.modelsBucket, getModelZipFileName(req.TrainingId))
 	if err != nil {
@@ -1402,8 +1433,6 @@ func (s *trainerService) GetModelDefinition(req *grpc_trainer_v2.ModelDefinition
 }
 
 func (s *trainerService) GetTrainedModel(req *grpc_trainer_v2.TrainedModelRequest, stream grpc_trainer_v2.Trainer_GetTrainedModelServer) error {
-	//s.mtx.Lock()
-	//defer s.mtx.Unlock()
 
 	logr := logger.LocLogger(logWith(req.TrainingId, req.UserId))
 	logr.Infof("GetTrainedModel")
@@ -1478,7 +1507,6 @@ func (s *trainerService) GetTrainedModel(req *grpc_trainer_v2.TrainedModelReques
 				continue
 			}
 			if err == io.EOF {
-				//logr.Errorf("Downloading trained model failed: %s", err.Error())
 				break
 			}
 			return err
@@ -1595,7 +1623,7 @@ func (s *trainerService) GetTrainedModelLogs(req *grpc_trainer_v2.TrainedModelLo
 
 	tds, err := s.tdsClient()
 	if err != nil {
-		logr.WithError(err).Error("Cannot create LCM service client")
+		logr.WithError(err).Error("Cannot create TDS client")
 		return err
 	}
 
@@ -1707,7 +1735,7 @@ func (s *trainerService) GetTrainingLogs(in *grpc_trainer_v2.Query,
 
 	tds, err := s.tdsClient()
 	if err != nil {
-		logr.WithError(err).Error("Cannot create LCM service client")
+		logr.WithError(err).Error("Cannot create TDS client")
 		return err
 	}
 
@@ -1794,7 +1822,7 @@ func (s *trainerService) GetTrainingEMetrics(in *grpc_trainer_v2.Query,
 	logr := logger.LocLogger(logWith(in.Meta.TrainingId, in.Meta.UserId))
 	tds, err := s.tdsClient()
 	if err != nil {
-		logr.WithError(err).Error("Cannot create LCM service client")
+		logr.WithError(err).Error("Cannot create TDS client")
 		return err
 	}
 
@@ -1879,6 +1907,11 @@ func (s *trainerService) validateRequest(log *logrus.Entry, req *grpc_trainer_v2
 	if len(m.Content) == 0 {
 		return s.failCreateRequest("Model definition content is not set", req, log)
 	}
+	// Initiate a zip reader which does checks for whether the set of bytes represents a valid zip
+	// Without this check, an invalid zip causes S301 during the start of training when we try to unzip it
+	if _, err := zip.NewReader(bytes.NewReader(m.Content), int64(len(m.Content))); err != nil {
+		return s.failCreateRequest("Model zip is invalid: "+err.Error(), req, log)
+	}
 
 	// validate Training object
 
@@ -1895,8 +1928,17 @@ func (s *trainerService) validateRequest(log *logrus.Entry, req *grpc_trainer_v2
 	if len(t.InputData) > 1 {
 		return s.failCreateRequest("Training input data can only contain one id", req, log)
 	}
-	if t.OutputData != nil && len(t.OutputData) > 1 {
-		return s.failCreateRequest("Training output data can only contain one id", req, log)
+	if s.datastore != nil { // Output data is only optional if an internal dlaas OS is set
+		if t.OutputData != nil && len(t.OutputData) > 1 {
+			return s.failCreateRequest("Training output data can only contain one id", req, log)
+		}
+	} else {
+		if t.OutputData == nil || len(t.OutputData) == 0 {
+			return s.failCreateRequest("Training output data is not set", req, log)
+		}
+		if len(t.OutputData) > 1 {
+			return s.failCreateRequest("Training output data can only contain one id", req, log)
+		}
 	}
 
 	// validate datastores
@@ -1992,7 +2034,7 @@ func (s *trainerService) validateDatastore(ds *grpc_trainer_v2.Datastore, req *g
 	if ds.Connection == nil || len(ds.Connection) == 0 {
 		return s.failCreateRequest("Data store connection info not set", req, log)
 	}
-	if ds.Fields == nil || len(ds.Fields) == 0 || ds.Fields["bucket"] == "" {
+	if ds.Fields == nil || len(ds.Fields) == 0 {
 		return s.failCreateRequest("Data store bucket is not set", req, log)
 	}
 
@@ -2011,7 +2053,7 @@ func (s *trainerService) validateDatastore(ds *grpc_trainer_v2.Datastore, req *g
 
 	// validate bucket (or container as it is called in Swift)
 	bucket := ds.Fields["bucket"]
-	if bucket != "" {
+	if bucket != "" && strings.ToLower(bucket) != noResultBucketTag {
 		exists, err := ostore.ContainerExists(bucket)
 		if !exists || err != nil {
 			return s.failCreateRequestWithCode(trainerClient.ErrInvalidCredentials,
@@ -2031,7 +2073,7 @@ func (s *trainerService) lcmClient() (client.LcmClient, error) {
 
 func (s *trainerService) tdsClient() (tdsClient.TrainingDataClient, error) {
 	if s.tds == nil {
-		address := fmt.Sprintf("%s.%s.svc.cluster.local:80", config.GetValue(config.TdsServiceName), config.GetPodNamespace())
+		address := fmt.Sprintf("%s.%s.svc.cluster.local:80", config.GetTDSServiceName(), config.GetPodNamespace())
 		tds, err := tdsClient.NewTrainingDataClientWithAddress(address)
 		if err != nil {
 			return nil, err
@@ -2043,7 +2085,7 @@ func (s *trainerService) tdsClient() (tdsClient.TrainingDataClient, error) {
 
 func (s *trainerService) rlClient() (rlClient.RatelimiterClient, error) {
 	if s.ratelimiter == nil {
-		address := fmt.Sprintf("%s.%s.svc.cluster.local:80", config.GetValue(config.RateLimiterServiceName), config.GetPodNamespace())
+		address := fmt.Sprintf("%s.%s.svc.cluster.local:80", config.GetRatelimiterServiceName(), config.GetPodNamespace())
 		ratelimiter, err := rlClient.NewRatelimiterClientWithAddress(address)
 		if err != nil {
 			return nil, err
@@ -2084,16 +2126,25 @@ func (s *trainerService) createJobConfig(tr *TrainingRecord) (*service.JobDeploy
 	if trainingData.Connection["region"] != "" {
 		envvars["DATA_STORE_REGION"] = trainingData.Connection["region"]
 	}
-	envvars["DATA_STORE_OBJECTID"] = trainingData.Fields["bucket"]
-
-	// Allow to fetch model from DLaaS's Object Store to the container
-	osConf := config.GetDataStoreConfig()
-	envvars["MODEL_STORE_USERNAME"] = osConf[storage.UsernameKey]
-	envvars["MODEL_STORE_APIKEY"] = osConf[storage.PasswordKey]
-	envvars["MODEL_STORE_AUTHURL"] = osConf[storage.AuthURLKey] // this will inside SL so we need the internal one
-	if osConf[storage.StorageType] != "" {
-		envvars["MODEL_STORE_TYPE"] = osConf[storage.StorageType]
+	for k, v := range trainingData.Fields {
+		if len(trainingData.Fields) == 1 {
+			envvars["DATA_STORE_OBJECTID"] = v
+			envvars["DATA_DIR"] = v
+		}
+		envvars["DATA_STORE_OBJECTID_"+k] = v
+		envvars["DATA_DIR_"+k] = v
 	}
+
+	// Fetch model from user's object store (only relevant when not using mount_cos)
+	osConf := config.GetDataStoreConfig()
+	envvars["MODEL_STORE_TYPE"] = trainingResults.Type
+	envvars["MODEL_STORE_USERNAME"] = trainingResults.Connection["user_name"]
+	envvars["MODEL_STORE_APIKEY"] = trainingResults.Connection["password"]
+	envvars["MODEL_STORE_AUTHURL"] = trainingResults.Connection["auth_url"]
+	if trainingResults.Connection[storage.StorageType] != "" {
+		envvars["MODEL_STORE_TYPE"] = envvars["RESULT_STORE_TYPE"]
+	}
+
 	// only needed for Bluemix objectstore
 	if val, ok := osConf[storage.DomainKey]; ok {
 		envvars["MODEL_STORE_DOMAINNAME"] = val
@@ -2124,11 +2175,11 @@ func (s *trainerService) createJobConfig(tr *TrainingRecord) (*service.JobDeploy
 	if trainingResults.Connection["project_id"] != "" {
 		envvars["RESULT_STORE_PROJECTID"] = trainingResults.Connection["project_id"]
 	}
-	envvars["RESULT_STORE_OBJECTID"] = fmt.Sprintf("%s/%s", trainingResults.Fields["bucket"], tr.TrainingID)
-
-	// Storing data in container at
-	envvars["DATA_DIR"] = trainingData.Fields["bucket"]
-
+	if strings.ToLower(trainingResults.Fields["bucket"]) == noResultBucketTag {
+		envvars["RESULT_STORE_OBJECTID"] = noResultBucketTag
+	} else {
+		envvars["RESULT_STORE_OBJECTID"] = fmt.Sprintf("%s/%s", trainingResults.Fields["bucket"], tr.TrainingID)
+	}
 	// Storing model in container at
 	envvars["MODEL_DIR"] = "/model-code"
 
@@ -2206,16 +2257,8 @@ func parseImageLocation(tr *TrainingRecord) *service.ImageLocation {
 }
 
 func setDefaultResourceRequirements(t *grpc_trainer_v2.Training) {
-	if t == nil || t.Resources == nil {
-		t.Resources = &grpc_trainer_v2.ResourceRequirements{ // set sensible defaults
-			Cpus:        5.0,
-			Gpus:        1.0,
-			Memory:      12.0,
-			MemoryUnit:  grpc_trainer_v2.SizeUnit_GiB,
-			Learners:    1,
-			Schedpolicy: "dense",
-		}
-		return
+	if t.Resources.Gpus == 0 {
+		t.Resources.GpuType = "CPU"
 	}
 	if t.Resources.Cpus == 0 {
 		t.Resources.Cpus = 5.0
@@ -2275,7 +2318,7 @@ func getModelsBucket() string {
 	if viper.IsSet(modelsBucketKey) {
 		return viper.GetString(modelsBucketKey)
 	}
-	return defaultModelsBucket
+	return ""
 }
 
 func getTrainedModelsBucket() string {

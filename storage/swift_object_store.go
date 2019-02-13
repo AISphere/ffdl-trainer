@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package storage
 
 import (
@@ -29,9 +28,9 @@ import (
 
 	"github.com/AISphere/ffdl-commons/config"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/AISphere/ffdl-commons/logger"
 	"github.com/ncw/swift"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -71,7 +70,6 @@ func (os *swiftObjectStore) Connect() error {
 		AuthUrl:  os.conf[AuthURLKey],
 		Domain:   os.conf[DomainKey],
 		Region:   os.conf[RegionKey],
-		// TenantId: os.conf[ProjectKey],
 	})
 }
 
@@ -143,7 +141,6 @@ func (os *swiftObjectStore) DownloadArchive(container string, object string) ([]
 	return payload, nil
 }
 
-
 func (os *swiftObjectStore) DeleteArchive(container string, object string) error {
 	if os.conn == nil {
 		return ErrNotConnected
@@ -174,7 +171,7 @@ func (os *swiftObjectStore) DeleteArchive(container string, object string) error
 func (os *swiftObjectStore) GetTrainedModelSize(path string, numLearners int32) (int64, error) {
 	logr := logger.LocLogger(log.StandardLogger().WithField("module", "storage"))
 	if os.conn == nil {
-		return 0,ErrNotConnected
+		return 0, ErrNotConnected
 	}
 
 	// set default numLearners if not provided
@@ -202,7 +199,7 @@ func (os *swiftObjectStore) GetTrainedModelSize(path string, numLearners int32) 
 		objects, err := os.conn.Objects(container, &swift.ObjectsOpts{
 			Path: pathToLearner,
 		})
-		logr.Debugf("objects: %v", objects)
+		logr.Debugf("objects: %s", objects)
 
 		if err != nil {
 			logr.WithError(err).Errorf("Checking object in container %s failed", container)
@@ -267,8 +264,7 @@ func (os *swiftObjectStore) DownloadTrainedModelAsZipStream(path string, numLear
 		return err
 	}
 
-
-	logr.Debugf("objects: %v", objects)
+	logr.Debugf("objects: %s", objects)
 	if err != nil {
 		logr.WithError(err).Errorf("Getting objects in container %s failed", container)
 		return err
@@ -289,7 +285,6 @@ func (os *swiftObjectStore) DownloadTrainedModelAsZipStream(path string, numLear
 			return err
 		}
 	}
-
 
 	if numLearners == 0 {
 		numLearners = 1
@@ -320,7 +315,7 @@ func (os *swiftObjectStore) DownloadTrainedModelAsZipStream(path string, numLear
 			}
 			return err
 		})
-		logr.Debugf("objects: %v", objects)
+		logr.Debugf("objects: %s", objects)
 
 		if err != nil {
 			logr.WithError(err).Errorf("Getting objects in container %s failed", container)
@@ -383,7 +378,7 @@ func (os *swiftObjectStore) DownloadTrainedModelLogFile(path string, numLearners
 	objects, err := os.conn.Objects(container, &swift.ObjectsOpts{
 		Path: pathToLearner,
 	})
-	logr.Debugf("objects: %v", objects)
+	logr.Debugf("objects: %s", objects)
 
 	if err != nil {
 		logr.WithError(err).Errorf("Getting objects in container %s failed", container)

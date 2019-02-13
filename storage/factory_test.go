@@ -28,7 +28,3 @@ func TestRegisterFactory(t *testing.T) {
 	assert.Contains(t, datastoreFactories, DataStoreTypeSwift)
 	assert.Contains(t, datastoreFactories, DataStoreTypeInMemory)
 }
-
-func TestCreateDataStore(t *testing.T) {
-	// TODO implement
-}

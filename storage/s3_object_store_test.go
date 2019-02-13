@@ -31,7 +31,6 @@ import (
 const (
 	testingBucketKey     = "objectstore.bucket.testing"
 	defaultTestingBucket = "dlaas-testing"
-	skipS3TestsForNow = true
 )
 
 func TestS3Connect(t *testing.T) {
@@ -45,11 +44,6 @@ func TestS3Connect(t *testing.T) {
 	assert.NoError(t, os.Connect())
 
 	// TODO figure out how to test a func that fatals
-	// _, err = NewS3ObjectStore(nil)
-	// assert.Error(t, err)
-	//
-	// _, err = NewS3ObjectStore(make(map[string]string))
-	// assert.Error(t, err)
 }
 
 func TestS3GetRegion(t *testing.T) {
@@ -110,8 +104,6 @@ func TestS3Archive(t *testing.T) {
 
 	payload, err := os.DownloadArchive(container, objectID)
 	assert.NoError(t, err)
-	// log.Debugf("zip sample size: ", len(zipBytes))
-	// log.Debugf("payload size: ", len(payload))
 	assert.EqualValues(t, zipBytes, payload)
 
 	err = os.DeleteArchive(container, objectID)
