@@ -51,7 +51,7 @@ type lcmClient struct {
 // service. If the dns_server config option is set to 'disabled/, it will
 // default to localhost:port.
 func NewLcm(lcm service.LifecycleManagerClient) (LcmClient, error) {
-	address := fmt.Sprintf("%s.%s.svc.cluster.local:80", config.GetValue(config.LcmServiceName), config.GetPodNamespace())
+	address := fmt.Sprintf("%s.%s.svc.cluster.local:80", config.GetLCMServiceName(), config.GetPodNamespace())
 	dnsServer := viper.GetString("dns_server")
 	if dnsServer == disabled { // for local testing without DNS server
 		address = LcmLocalAddress
