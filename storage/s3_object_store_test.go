@@ -31,6 +31,7 @@ import (
 const (
 	testingBucketKey     = "objectstore.bucket.testing"
 	defaultTestingBucket = "dlaas-testing"
+	skipS3TestsForNow = true
 )
 
 func TestS3Connect(t *testing.T) {

@@ -42,6 +42,9 @@ protoc: protoc-lcm protoc-tds          ## Make gRPC proto clients, depends on `m
 
 install-deps: protoc-ratelimiter install-deps-base protoc  ## Remove vendor directory, rebuild dependencies
 
+glide-update: protoc-ratelimiter          ## Run full glide rebuild
+	glide up;
+
 diagnose-target-build:
 	@echo "Calling docker-build-base"
 
@@ -54,6 +57,7 @@ docker-push: diagnose-target-push docker-push-base          ## Push docker image
 
 clean: clean-base clean-ratelimiter    ## clean all build artifacts
 	rm -rf build; \
+	rm -f ./$(RATELIMITER_SUBDIR)/$(RATELIMITER_FNAME).pb.go
 
 docker-build-toolchain-container:  ## build docker container for running the build
 	(cd toolchain && docker build --label git-commit=$(shell git rev-list -1 HEAD) -t "$(TOOLCHAIN_DOCKER_HOST)/$(TOOLCHAIN_DOCKER_NAMESPACE)/$(TOOLCHAIN_DOCKER_IMG_NAME):$(TOOLCHAIN_IMAGE_TAG)" .)
