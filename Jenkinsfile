@@ -83,9 +83,16 @@ pipeline {
                                 echo "====== Trying to pull ${env.BRANCH_NAME} ${repo} ======"
                                 LONG_GIT_COMMIT = checkout(scm).GIT_COMMIT
                             } else {
-                                echo "====== Trying to pull master ${repo} ======"
-                                echo "Checking out ${repo}"
-                                git branch: 'master', url: "https://github.com/AISphere/${repo}.git"
+                                if (repo == "ffdl-commons") {
+                                    // TODO: This is only temporary and needs to be fixed once ffdl-commons merges branch!
+                                    echo "====== Trying to pull dlaas-code-pull-feb12-2019 ${repo} ======"
+                                    echo "Checking out ${repo}"
+                                    git branch: 'dlaas-code-pull-feb12-2019', url: "https://github.com/AISphere/${repo}.git"
+                                } else {
+                                    echo "====== Trying to pull master ${repo} ======"
+                                    echo "Checking out ${repo}"
+                                    git branch: 'master', url: "https://github.com/AISphere/${repo}.git"
+                                }
                             }
                             echo "================================="
                         }
