@@ -42,8 +42,7 @@ protoc: protoc-lcm protoc-tds          ## Make gRPC proto clients, depends on `m
 
 install-deps: protoc-ratelimiter install-deps-base protoc  ## Remove vendor directory, rebuild dependencies
 
-glide-update: protoc-ratelimiter          ## Run full glide rebuild
-	glide up;
+glide-update: protoc-ratelimiter glide-update-base        ## Run full glide rebuild
 
 diagnose-target-build:
 	@echo "Calling docker-build-base"
