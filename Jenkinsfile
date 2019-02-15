@@ -87,7 +87,7 @@ pipeline {
                                     // TODO: This is only temporary and needs to be fixed once ffdl-commons merges branch!
                                     echo "====== Trying to pull dlaas-code-pull-feb12-2019 ${repo} ======"
                                     echo "Checking out ${repo}"
-                                    git branch: 'dlaas-code-pull-feb12-2019', url: "https://github.com/AISphere/${repo}.git"
+                                    git branch: 'dlaas-code-pull-feb12-2019', url: "https://github.com/sboagibm/${repo}.git"
                                 } else {
                                     echo "====== Trying to pull master ${repo} ======"
                                     echo "Checking out ${repo}"
