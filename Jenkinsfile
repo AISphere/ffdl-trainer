@@ -120,14 +120,6 @@ pipeline {
                 }
             }
         }
-        stage('build') {
-            steps {
-                dir("$AISPHERE/${env.DOCKER_REPO_NAME}") {
-                    sh "make build-x86-64"
-                    sh "make build-grpc-health-checker"
-                }
-            }
-        }
         stage('docker-build') {
             steps {
                 dir("$AISPHERE/${env.DOCKER_REPO_NAME}") {
