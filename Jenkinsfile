@@ -83,7 +83,7 @@ pipeline {
                                 echo "====== Trying to pull ${env.BRANCH_NAME} ${repo} ======"
                                 LONG_GIT_COMMIT = checkout(scm).GIT_COMMIT
                             } else {
-                                if (repo == "ffdl-commons") {
+                                if (repo == "ffdl-commons" || repo == "ffdl-trainer" || repo == "ffdl-lcm" || repo == "ffdl-job-monitor" || repo == "ffdl-model-metrics") {
                                     // TODO: This is only temporary and needs to be fixed once ffdl-commons merges branch!
                                     echo "====== Trying to pull dlaas-code-pull-feb12-2019 ${repo} ======"
                                     echo "Checking out ${repo}"
