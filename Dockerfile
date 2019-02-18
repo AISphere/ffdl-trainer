@@ -15,7 +15,7 @@
 #
 
 
-FROM ffdl-service-base:ubuntu16.04
+FROM registry.ng.bluemix.net/dlaas_dev/ffdl-service-base:ubuntu16.04
 
 ADD bin/main /main
 RUN chmod 755 /main
