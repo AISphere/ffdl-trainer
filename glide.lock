@@ -2,7 +2,7 @@ hash: 8acb1eefe238a16614931e2fdbfbaf7bd3a457dd71b26fd93839657758546ce8
 updated: 2019-02-15T09:06:35.498945-05:00
 imports:
 - name: github.com/AISphere/ffdl-commons
-  version: d1a8d0c443c5ab4f07a2ef0ed4538971b740e2c6
+  version: dlaas-code-pull-feb12-2019
   repo: https://github.com/sboagibm/ffdl-commons.git
   subpackages:
   - config
