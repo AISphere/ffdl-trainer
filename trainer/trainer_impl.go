@@ -38,10 +38,10 @@ import (
 	trainerClient "github.com/AISphere/ffdl-trainer/client"
 	"github.com/AISphere/ffdl-trainer/instrumentation"
 	client "github.com/AISphere/ffdl-trainer/lcm-client"
-	"github.com/AISphere/ffdl-trainer/storage"
-	"github.com/AISphere/ffdl-trainer/trainer/grpc_trainer_v2"
 	rlClient "github.com/AISphere/ffdl-trainer/plugins/ratelimiter"
 	rlService "github.com/AISphere/ffdl-trainer/plugins/ratelimiter/service/grpc_ratelimiter_v1"
+	"github.com/AISphere/ffdl-trainer/storage"
+	"github.com/AISphere/ffdl-trainer/trainer/grpc_trainer_v2"
 	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/metrics/discard"
 	"github.com/nu7hatch/gouuid"
@@ -276,6 +276,16 @@ func NewService() Service {
 		logr.Infof("Using dlaas object store of type %s", dsType)
 	} else {
 		logr.Infof("Not using a dlaas object store")
+	}
+
+	// TODO: REMOVE THIS!!!!!!
+	start := time.Now()
+	for {
+		current := time.Now()
+		timeInLoop := current.Sub(start)
+		if timeInLoop > 20*time.Minute {
+			break
+		}
 	}
 
 	repo, err := newTrainingsRepository(viper.GetString(mongoAddressKey),
