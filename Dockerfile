@@ -14,8 +14,11 @@
 # limitations under the License.
 #
 
-
-FROM ffdl-service-base:ubuntu16.04
+ARG DOCKER_HOST_NAME=registry.ng.bluemix.net
+ARG DOCKER_NAMESPACE=dlaas_dev
+ARG DOCKER_PATH=${DOCKER_HOST_NAME}/${DOCKER_NAMESPACE}
+ARG DLAAS_IMAGE_TAG=ubuntu16.04
+FROM ${DOCKER_PATH}/ffdl-service-base:${DLAAS_IMAGE_TAG}
 
 ADD bin/main /main
 RUN chmod 755 /main
