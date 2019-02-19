@@ -206,21 +206,6 @@ type trainerService struct {
 func NewService() Service {
 	logr := logger.LogServiceBasic(logger.LogkeyTrainerService)
 
-	// TODO: REMOVE THIS!!!!!!
-	start := time.Now()
-	logr.Debug("waiting entering hack wait loop")
-	for {
-		current := time.Now()
-		timeInLoop := current.Sub(start)
-		if timeInLoop > 20*time.Second {
-			logr.Debugf("waiting: %v", timeInLoop)
-		}
-		if timeInLoop > 20*time.Minute {
-			break
-		}
-	}
-	logr.Debug("exited entering hack wait loop")
-
 	config.FatalOnAbsentKey(mongoAddressKey)
 	config.SetDefault(gpuLimitsQuerySizeKey, 200)
 	config.SetDefault(pollIntervalKey, 60) // in seconds
