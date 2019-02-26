@@ -1,9 +1,9 @@
-hash: 8acb1eefe238a16614931e2fdbfbaf7bd3a457dd71b26fd93839657758546ce8
-updated: 2019-02-15T09:06:35.498945-05:00
+hash: f53cdb5a9d6f68a64135a9a3ac16f50c0900a1a36b1fe10f79a19c1e12d2ccb5
+updated: 2019-02-25T19:34:47.763082-05:00
 imports:
 - name: github.com/AISphere/ffdl-commons
-  version: dlaas-code-pull-feb12-2019
-  repo: https://github.com/sboagibm/ffdl-commons.git
+  version: c641a3cc57cb7cc4eab6e4afe7cf8e7595864417
+  repo: https://github.com/AISphere/ffdl-commons.git
   subpackages:
   - config
   - framework
@@ -13,7 +13,7 @@ imports:
 - name: github.com/alecthomas/units
   version: 2efee857e7cfd4f3d0138cc3cbb1b4966962b93a
 - name: github.com/aws/aws-sdk-go
-  version: 4e2e7c3c80cfb77d22990cadb2c17096d2614938
+  version: b4d97e9cf75f3815bd694b8e0d6f9d81492c3586
   subpackages:
   - aws
   - aws/awserr
@@ -113,8 +113,6 @@ imports:
   - json/parser
   - json/scanner
   - json/token
-- name: github.com/inconshreveable/mousetrap
-  version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
 - name: github.com/jmespath/go-jmespath
   version: c2b33e8439af944379acbdd9c3a5fe0bc44bd8a5
 - name: github.com/konsorten/go-windows-terminal-sequences
@@ -196,7 +194,7 @@ imports:
 - name: github.com/ventu-io/go-shortid
   version: 6c56cef5189ca1b3d5ef01dc07f4d611dfc0bb33
 - name: golang.org/x/crypto
-  version: 81e90905daefcd6fd217b62423c0908922eadb30
+  version: 9419663f5a44be8b34ca85f08abc5fe1be11f8a3
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net

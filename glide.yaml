@@ -4,14 +4,8 @@ ignore:
 - github.com/AISphere/ffdl-model-metrics
 import:
 - package: github.com/AISphere/ffdl-commons
-  version: dlaas-code-pull-feb12-2019
-  repo: https://github.com/sboagibm/ffdl-commons.git
-  subpackages:
-  - config
-  - framework
-  - logger
-  - metricsmon
-  - util
+  version: master
+  repo: https://github.com/AISphere/ffdl-commons.git
 - package: github.com/aws/aws-sdk-go
   version: ^1.15.68
   subpackages:
