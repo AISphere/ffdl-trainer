@@ -1,5 +1,5 @@
 /*
- * Copyright 2018. IBM Corporation
+ * Copyright 2017-2018 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 
 package storage
 
@@ -31,6 +30,7 @@ import (
 
 	"github.com/AISphere/ffdl-commons/config"
 
+	"github.com/AISphere/ffdl-commons/logger"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -38,7 +38,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/spf13/viper"
-	"github.com/AISphere/ffdl-commons/logger"
 )
 
 const (
@@ -297,14 +296,6 @@ func (os *s3ObjectStore) copyDirToZipStream(container string, path string, w *zi
 
 		// TODO download hangs
 		// TODO try to do this without a buffer (need a way to bridge io.Writer and io.WriterAt)
-		// payload := make([]byte, 1024)
-		// buff := aws.NewWriteAtBuffer(make([]byte, 1024*1024))
-		// numBytes, err := downloader.Download(buff, input)
-		// log.Debugf("number of bytes read: ", numBytes)
-		// if err != nil {
-		// 	log.Errorf("Downloading object %s/%s failed: %s", container, *obj.Key, err.Error())
-		// 	return err
-		// }
 		result, err := os.client.GetObject(input)
 		if err != nil {
 			log.Errorf("Cannot get object from datastore: %s", err.Error())
@@ -356,7 +347,6 @@ func (os *s3ObjectStore) DownloadTrainedModelAsZipStream(path string, numLearner
 		Delimiter: aws.String("/"),
 		Prefix:    aws.String(pathToRootFolder),
 	})
-	// logr.Debugf("objects: %s", resp.Contents)
 	if err != nil {
 		logr.Errorf("Listing objects in bucket %s failed: %s", container, err.Error())
 		return err
@@ -475,7 +465,6 @@ func (os *s3ObjectStore) DownloadTrainedModelLogFile(path string, numLearners in
 	posStart := int64(0)
 
 	for posStart < nbytesToProcess {
-		// var nWritten int
 		nWritten, err := writer.Write(buff.Bytes()[posStart:])
 		posStart += int64(nWritten)
 		if posStart < nbytesToProcess {

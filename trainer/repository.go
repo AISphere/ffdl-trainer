@@ -1,5 +1,5 @@
 /*
- * Copyright 2018. IBM Corporation
+ * Copyright 2017-2018 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-
 package trainer
 
 import (
-	log "github.com/sirupsen/logrus"
 	"github.com/AISphere/ffdl-commons/logger"
 	"github.com/AISphere/ffdl-trainer/trainer/grpc_trainer_v2"
+	log "github.com/sirupsen/logrus"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -266,7 +265,7 @@ func (r *trainingsRepository) Delete(trainingID string) error {
 	}
 	_, err1 := sess.DB(r.database).C(r.collection).Upsert(selector, newRecord)
 	if err1 != nil {
-		logWithTraining(trainingID).Errorf("Cannot (soft-)delete training record: %s", err.Error())
+		logWithTraining(trainingID).Errorf("Cannot (soft-)delete training record: %s", err1.Error())
 		return err1
 	}
 	return nil

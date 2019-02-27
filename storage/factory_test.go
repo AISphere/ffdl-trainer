@@ -1,5 +1,5 @@
 /*
- * Copyright 2018. IBM Corporation
+ * Copyright 2017-2018 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,4 @@ func TestRegisterFactory(t *testing.T) {
 	assert.Contains(t, datastoreFactories, DataStoreTypeS3)
 	assert.Contains(t, datastoreFactories, DataStoreTypeSwift)
 	assert.Contains(t, datastoreFactories, DataStoreTypeInMemory)
-}
-
-func TestCreateDataStore(t *testing.T) {
-	// TODO implement
 }

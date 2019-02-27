@@ -1,5 +1,5 @@
 /*
- * Copyright 2018. IBM Corporation
+ * Copyright 2017-2018 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,8 @@ import (
 	"testing"
 	"time"
 
-	stdprometheus "github.com/prometheus/client_golang/prometheus"
 	"github.com/AISphere/ffdl-commons/metricsmon"
+	stdprometheus "github.com/prometheus/client_golang/prometheus"
 )
 
 var (
@@ -129,9 +129,6 @@ func TestResettableMetrics(t *testing.T) {
 				t.Error("Numbers not matching for resettable gauge! \n", string(respBody))
 			}
 		})
-		// 	log.Println(string(respBody))
-		// 	time.Sleep(time.Second)
-		// }
 
 		//CHECK 3
 		time.AfterFunc((timeToStartTicker+timeToReset)*time.Second, func() {

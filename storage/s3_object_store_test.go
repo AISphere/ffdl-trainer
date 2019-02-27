@@ -1,5 +1,5 @@
 /*
- * Copyright 2018. IBM Corporation
+ * Copyright 2017-2018 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,11 +45,6 @@ func TestS3Connect(t *testing.T) {
 	assert.NoError(t, os.Connect())
 
 	// TODO figure out how to test a func that fatals
-	// _, err = NewS3ObjectStore(nil)
-	// assert.Error(t, err)
-	//
-	// _, err = NewS3ObjectStore(make(map[string]string))
-	// assert.Error(t, err)
 }
 
 func TestS3GetRegion(t *testing.T) {
@@ -110,8 +105,6 @@ func TestS3Archive(t *testing.T) {
 
 	payload, err := os.DownloadArchive(container, objectID)
 	assert.NoError(t, err)
-	// log.Debugf("zip sample size: ", len(zipBytes))
-	// log.Debugf("payload size: ", len(payload))
 	assert.EqualValues(t, zipBytes, payload)
 
 	err = os.DeleteArchive(container, objectID)

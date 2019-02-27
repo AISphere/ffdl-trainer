@@ -19,8 +19,6 @@ syntax = "proto3";
 
 package grpc.trainer.v2;
 
-//import public "trainer/grpc_trainer_v2/evaluation_metrics.proto";
-
 service Trainer {
     // Creates a new deep learning training job for a given model definition.
     rpc CreateTrainingJob (CreateRequest) returns (CreateResponse) {

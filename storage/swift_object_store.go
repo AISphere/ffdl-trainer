@@ -1,5 +1,5 @@
 /*
- * Copyright 2018. IBM Corporation
+ * Copyright 2017-2018 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 
 package storage
 
@@ -29,9 +28,9 @@ import (
 
 	"github.com/AISphere/ffdl-commons/config"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/AISphere/ffdl-commons/logger"
 	"github.com/ncw/swift"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -71,7 +70,6 @@ func (os *swiftObjectStore) Connect() error {
 		AuthUrl:  os.conf[AuthURLKey],
 		Domain:   os.conf[DomainKey],
 		Region:   os.conf[RegionKey],
-		// TenantId: os.conf[ProjectKey],
 	})
 }
 
@@ -143,7 +141,6 @@ func (os *swiftObjectStore) DownloadArchive(container string, object string) ([]
 	return payload, nil
 }
 
-
 func (os *swiftObjectStore) DeleteArchive(container string, object string) error {
 	if os.conn == nil {
 		return ErrNotConnected
@@ -174,7 +171,7 @@ func (os *swiftObjectStore) DeleteArchive(container string, object string) error
 func (os *swiftObjectStore) GetTrainedModelSize(path string, numLearners int32) (int64, error) {
 	logr := logger.LocLogger(log.StandardLogger().WithField("module", "storage"))
 	if os.conn == nil {
-		return 0,ErrNotConnected
+		return 0, ErrNotConnected
 	}
 
 	// set default numLearners if not provided
@@ -267,7 +264,6 @@ func (os *swiftObjectStore) DownloadTrainedModelAsZipStream(path string, numLear
 		return err
 	}
 
-
 	logr.Debugf("objects: %v", objects)
 	if err != nil {
 		logr.WithError(err).Errorf("Getting objects in container %s failed", container)
@@ -289,7 +285,6 @@ func (os *swiftObjectStore) DownloadTrainedModelAsZipStream(path string, numLear
 			return err
 		}
 	}
-
 
 	if numLearners == 0 {
 		numLearners = 1

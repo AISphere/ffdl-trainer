@@ -14,14 +14,11 @@
 # limitations under the License.
 #
 
-
-FROM ubuntu:16.04
-
-ENV DEBIAN_FRONTEND noninteractive
-RUN apt-get update && apt-get install --yes ca-certificates curl ldnsutils
-
-ADD vendor/github.com/AISphere/ffdl-commons/grpc-health-checker/bin/grpc-health-checker /usr/local/bin/
-RUN chmod +x /usr/local/bin/grpc-health-checker
+ARG DOCKER_HOST_NAME=registry.ng.bluemix.net
+ARG DOCKER_NAMESPACE=dlaas_dev
+ARG DLAAS_SERVICE_BASE_DOCKER_PATH=${DOCKER_HOST_NAME}/${DOCKER_NAMESPACE}
+ARG DLAAS_SERVICE_BASE_IMAGE_TAG=ubuntu16.04
+FROM ${DLAAS_SERVICE_BASE_DOCKER_PATH}/ffdl-service-base:${DLAAS_SERVICE_BASE_IMAGE_TAG}
 
 ADD bin/main /main
 RUN chmod 755 /main
