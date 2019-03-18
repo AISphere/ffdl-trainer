@@ -18,7 +18,6 @@
 #--------------------------------------------------------------------------#
 
 # .:: Verify fundamental dependencies ::.
-
 if [[ -z "${GOPATH}" ]]; then
     echo "Error: Environment variable GOPATH not set." 1>&2
     exit 1
@@ -52,7 +51,15 @@ docker stop s3compiler && docker rm s3compiler
 
 mkdir -p ${GOPATH}/bin
 mkdir -p ${GOPATH}/src/github.com/IBM && cd $_
-git clone https://github.com/IBM/ibmcloud-object-storage-plugin.git && cd ibmcloud-object-storage-plugin
+
+if ! [[ -e ${GOPATH}/src/github.com/IBM/ibmcloud-object-storage-plugin ]]; then
+    echo "IBM Cloud Storage driver directory does not exist. Cloning."
+    git clone https://github.com/IBM/ibmcloud-object-storage-plugin.git
+else
+    echo "IBM Cloud Storage driver directory already exists."
+fi
+cd ibmcloud-object-storage-plugin
+
 make provisioner
 # Result: Driver ibmc-s3fs is now in ${GOPATH}/bin/ibmc-s3fs
 make driver

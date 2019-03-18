@@ -114,7 +114,7 @@ Run training job (on actual machine - no SSH forwarding here currently)
 # Run export commands from previous command (make cli-grpc-config)
 alias ffdl=~/go/src/github.com/AISphere/ffdl-cli/bin/ffdl_linux
 ffdl list
-# The following will currently break:
+
 ffdl train manifest.yml .
 ```
 
