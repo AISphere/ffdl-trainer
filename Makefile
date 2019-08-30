@@ -1,15 +1,19 @@
-#---------------------------------------------------------------#
-#                                                               #
-# IBM Confidential                                              #
-# OCO Source Materials                                          #
-#                                                               #
-# (C) Copyright IBM Corp. 2016, 2017                            #
-#                                                               #
-# The source code for this program is not published or          #
-# otherwise divested of its trade secrets, irrespective of      #
-# what has been deposited with the U.S. Copyright Office.       #
-#                                                               #
-#---------------------------------------------------------------#
+#--------------------------------------------------------------------------#
+#                                                                          #
+# Copyright 2017-2018 IBM Corporation                                      #
+#                                                                          #
+# Licensed under the Apache License, Version 2.0 (the "License");          #
+# you may not use this file except in compliance with the License.         #
+# You may obtain a copy of the License at                                  #
+#                                                                          #
+# http://www.apache.org/licenses/LICENSE-2.0                               #
+#                                                                          #
+# Unless required by applicable law or agreed to in writing, software      #
+# distributed under the License is distributed on an "AS IS" BASIS,        #
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. #
+# See the License for the specific language governing permissions and      #
+# limitations under the License.                                           #
+#--------------------------------------------------------------------------#
 
 DOCKER_IMG_NAME = trainer-v2-service
 
@@ -65,3 +69,47 @@ docker-push-toolchain-container:  ## build docker container for running the buil
 	docker push "$(TOOLCHAIN_DOCKER_HOST)/$(TOOLCHAIN_DOCKER_NAMESPACE)/$(TOOLCHAIN_DOCKER_IMG_NAME):$(TOOLCHAIN_IMAGE_TAG)"
 
 toolchain-container: docker-build-toolchain-container docker-push-toolchain-container ## Build and push toolchain-container
+
+
+
+deploy-plugin:
+	@# deploy the stack via helm
+	@echo Deploying services to Kubernetes. This may take a while.
+	@if ! helm list > /dev/null 2>&1; then \
+		echo 'Installing helm/tiller'; \
+		helm init; \
+		sleep 5; \
+		echo "Waiting tiller to be ready"; \
+		while ! (kubectl get pods --all-namespaces | grep tiller-deploy | grep '1/1' > /dev/null); \
+		do \
+			sleep 1; \
+		done; \
+	fi;
+	@existingPlugin=$$(helm list | grep ibmcloud-object-storage-plugin | awk '{print $$1}' | head -n 1);
+	@# kubectl config set-context $$(kubectl config current-context) --namespace=kube-system
+	@if [ "$(VM_TYPE)" = "dind" ]; then \
+		export FFDL_PATH=$$(pwd); \
+		./bin/s3_driver.sh; \
+		sleep 10; \
+		(if [ -z "$$existingPlugin" ]; then \
+			helm install --set dind=true,cloud=false,namespace=kube-system storage-plugin; \
+		else \
+			helm upgrade --set dind=true,cloud=false,namespace=kube-system $$existingPlugin storage-plugin; \
+		fi) & pid=$$!; \
+	else \
+		(if [ -z "$$existingPlugin" ]; then \
+			helm install --set namespace=kube-system storage-plugin; \
+		else \
+			helm upgrade --set namespace=kube-system $$existingPlugin storage-plugin; \
+		fi) & pid=$$!; \
+	fi;
+	@echo "Wait while kubectl get pvc shows static-volume-1 in state Pending"
+	@./bin/create_static_volumes.sh
+	@./bin/create_static_volumes_config.sh
+	@sleep 3
+
+undeploy-cos-plugin:
+	@existingPlugin=$$(helm list | grep ibmcloud-object-storage-plugin | awk '{print $$1}' | head -n 1); \
+		helm delete $$existingPlugin; \
+		kubectl delete pvc/static-volume-1 cm/static-volumes cm/static-volumes-v2;
+

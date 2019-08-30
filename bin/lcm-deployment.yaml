@@ -1,0 +1,162 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: ffdl-lcm
+  namespace: {{.Values.namespace}}
+  labels:
+    service: ffdl-lcm
+    environment: {{.Values.env}}
+spec:
+  selector:
+    matchLabels:
+      service: ffdl-lcm
+      environment: {{.Values.env}}
+  replicas: {{.Values.lcm.replicas}}
+  template:
+    metadata:
+      labels:
+        service: ffdl-lcm
+        environment: {{.Values.env}}
+        version:  {{.Values.ffdl_lcm.lcm.version}}
+    spec:
+      serviceAccountName: editor
+      volumes:
+        - name: learner-config-json
+          configMap:
+            name: learner-config-new
+        - name: ssl-certificates
+          secret:
+            secretName: service-ssl-certificates
+{{ if and (eq .Values.env "dev") .Values.learner.kubeSecret }}
+        - name: learner-kube
+          secret:
+            secretName: {{.Values.learner.kubeSecret}}
+{{ end }}
+        - name: learner-config-volume
+          configMap:
+            name: learner-config
+{{ if (eq .Values.has_static_volumes true) }}
+        - name: static-volumes-config-volume-v2
+          configMap:
+            name: static-volumes-v2
+{{ end }}
+        - name: etcd-ssl-cert
+          secret:
+            secretName: lcm-secrets
+            items: [{
+              key: DLAAS_ETCD_CERT,
+              path: etcd/etcd.cert
+            }]
+{{ if .Values.k8s_1dot8_or_above }}
+      serviceAccount: {{.Values.docker.image_prefix}}lcm
+      serviceAccountName: {{.Values.docker.image_prefix}}lcm
+{{ end }}
+      containers:
+      - name: ffdl-lcm-container
+        image: {{.Values.docker.registry}}/{{.Values.docker.namespace}}/{{.Values.lcm.image_name}}:{{.Values.ffdl_lcm.lcm.version}}
+{{ if .Values.docker.pullPolicy }}
+        imagePullPolicy: {{.Values.docker.pullPolicy}}
+{{ end }}
+        ports:
+        - containerPort: 8443
+        volumeMounts:
+        - mountPath: /etc/learner-config-json/
+          name: learner-config-json
+        - mountPath: /etc/ssl/dlaas
+          name: ssl-certificates
+          readOnly: true
+{{ if and (eq .Values.env "dev") .Values.learner.kubeSecret }}
+        - mountPath: /var/run/secrets/learner-kube
+          name: learner-kube
+{{ end }}
+        - mountPath: /etc/learner-config
+          name: learner-config-volume
+{{ if (eq .Values.has_static_volumes true) }}
+        - mountPath: /etc/static-volumes-v2
+          name: static-volumes-config-volume-v2
+{{ end }}
+        - mountPath: /etc/certs/
+          name: etcd-ssl-cert
+          readOnly: true
+        env:
+        - name: DLAAS_IMAGE_TAG
+          value:  "{{.Values.lcm.image_tag}}"
+        - name: TRAINER_SERVICE_NAME
+          value: "{{.Values.lcm.trainer_service_name}}"
+        - name: DATA_SERVICE_NAME
+          value: "{{.Values.lcm.data_service_name}}"
+        - name: DLAAS_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: DLAAS_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: DLAAS_LEARNER_KUBE_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: DLAAS_SHARED_VOLUME_STORAGE_CLASS
+          value: {{.Values.lcm.shared_volume_storage_class}}
+        - name: DLAAS_LOAD_TRAINING_DATA_MEM_IN_MB
+          value: "{{.Values.lcm.load_training_data_mem_in_mb}}"
+        - name: DLAAS_MILLI_CPU
+          value: "{{.Values.lcm.milli_cpu}}"
+        - name: DLAAS_MEM_IN_MB
+          value: "{{.Values.lcm.mem_in_mb}}"
+        - name: DLAAS_DEVICE_PLUGIN
+          value: "{{.Values.lcm.device_plugin}}"
+        - name: DLAAS_IMAGE_PULL_POLICY
+          value: {{.Values.docker.pullPolicy}}
+        - name: DLAAS_ENV
+          value: {{.Values.env}}
+        - name: DLAAS_LOGLEVEL
+          value: {{.Values.log.level}}
+        - name: DLAAS_IMAGE_PREFIX
+          value: {{.Values.docker.image_prefix}}
+        - name: DLAAS_DATABROKER_TAG
+          value: {{.Values.databroker.tag}}
+        - name: DLAAS_LEARNER_TAG
+          value: {{.Values.learner.tag}}
+        - name: DLAAS_LEARNER_REGISTRY
+          value: {{.Values.docker.registry}}/{{.Values.learner.docker_namespace}}
+        - name: DLAAS_ETCD_ADDRESS
+          valueFrom:
+            secretKeyRef:
+              name: lcm-secrets
+              key: DLAAS_ETCD_ADDRESS
+        - name: DLAAS_ETCD_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: lcm-secrets
+              key: DLAAS_ETCD_USERNAME
+        - name: DLAAS_ETCD_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: lcm-secrets
+              key: DLAAS_ETCD_PASSWORD
+        - name: DLAAS_ETCD_PREFIX
+          valueFrom:
+            secretKeyRef:
+              name: lcm-secrets
+              key: DLAAS_ETCD_PREFIX
+        - name: DLAAS_PUSH_METRICS_ENABLED
+          value: "false"
+        command: ["/bin/sh", "-c"]
+        args: ["DLAAS_PORT=8443 /main"]
+        resources:
+          limits:
+            cpu: {{.Values.lcm.cpus}}
+            memory: {{.Values.lcm.memory}}
+        livenessProbe:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - "grpc-health-checker --port 8443 --tls"
+          initialDelaySeconds: 15
+          timeoutSeconds: 2
+      imagePullSecrets:
+      - name: {{.Values.docker.imagePullSecret}}
+
